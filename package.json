@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "esbuild": "0.17.15",
     "typescript": "^5.0.3",
     "vexflow": "^4.1.0"
   }
