@@ -17,7 +17,7 @@
     <div id="output"></div>
     <script>
 
-        const INTERVAL = 2000000;
+        const INTERVAL = 5000;
 
         // [Octave, Position in Octave]
         const LOW_NOTE = [4, 1];
@@ -84,7 +84,6 @@
             const { vf, score, system } = setup();
             system
                 .addStave({
-                    width: 500,
                     voices: [
                         score.voice(score.notes(noteStr, { stem: 'auto' })),
                     ],
@@ -95,8 +94,17 @@
             vf.draw();
         }
 
-        doRound();
-        window.setInterval(doRound, INTERVAL);
+        let interval;
+
+        const resetAndGo = () => {
+            window.clearInterval(interval);
+            doRound();
+            interval = window.setInterval(doRound, INTERVAL);
+        };
+
+        resetAndGo();
+
+        document.body.addEventListener('keypress', resetAndGo);
 
     </script>
 </body>
