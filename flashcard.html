@@ -10,10 +10,23 @@
             width: 500px;
             height: 200px;
         }
+        #input-interval {
+            width: 30px;
+        }
     </style>
 </head>
 <body>
     <div id="output"></div>
+
+    <p>
+        <input type="text" id="input-interval" name="input-interval" value="1">
+        <label for="input-interval">Interval between changes</label>
+    </p>
+    <p>
+        <input type="checkbox" id="input-all-notes-equal" name="input-all-notes-equal" value="checked"></input>
+        <label for="input-all-notes-equal">Have all four notes be the same?</label>
+    </p>
+
     <script src="out.js"></script>
 </body>
 </html>

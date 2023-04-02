@@ -3,13 +3,8 @@ import type { EasyScore, System, Factory } from 'vexflow';
 
 type Note = [number, number]; // octave, position in octave
 
-
-const INTERVAL = 1000;
-
 const LOW_NOTE: Note = [4, 1]; // middle C
 const HIGH_NOTE: Note = [5, 1]; // high C
-
-const VARY_NOTES = true;
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
@@ -46,14 +41,14 @@ const randomNote = (noteRange: Array<Note>): Note => {
 
 const makeNotes = (noteRange: Array<Note>): Array<Note> => {
     const notes: Array<Note> = [];
-    if (VARY_NOTES) {
-        for (let i = 0; i < 4; i++) {
-            notes.push(randomNote(noteRange));
-        }
-    } else {
+    if ((document.getElementById('input-all-notes-equal') as HTMLInputElement).checked) {
         const note = randomNote(noteRange);
         for (let i = 0; i < 4; i++) {
             notes.push(note);
+        }
+    } else {
+        for (let i = 0; i < 4; i++) {
+            notes.push(randomNote(noteRange));
         }
     }
     return notes;
@@ -90,11 +85,23 @@ const doRound = () => {
 let interval;
 
 const resetAndGo = () => {
+    console.log(document.getElementById('input-all-notes-equal').value)
+    console.log(document.getElementById('input-interval').value)
     window.clearInterval(interval);
     doRound();
-    interval = window.setInterval(doRound, INTERVAL);
+    console.log("input-interval", parseInt((document.getElementById('input-interval') as HTMLInputElement).value, 10) * 1000);
+    interval = window.setInterval(
+        doRound,
+        parseInt((document.getElementById('input-interval') as HTMLInputElement).value, 10) * 1000
+    );
 };
 
 resetAndGo();
 
-document.body.addEventListener('keypress', resetAndGo);
+// document.body.addEventListener('keypress', (e) => {
+//     if (e.key === ' ') {
+//         resetAndGo();
+//     }
+// });
+// document.getElementById('input-all-notes-equal').addEventListener('change', resetAndGo);
+// document.getElementById('input-interval').addEventListener('change', resetAndGo);
