@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ukulele Flashcards</title>
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.0.3/build/cjs/vexflow.js"></script>
+    <style>
+        #output {
+            margin: 0 auto;
+            width: 500px;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div id="output"></div>
+    <script>
+
+        const INTERVAL = 2000000;
+
+        // [Octave, Position in Octave]
+        const LOW_NOTE = [4, 1];
+        const HIGH_NOTE = [5, 4];
+
+        const VARY_NOTES = true;
+
+        const SHOW_LETTERS = true; // not used yet
+        const SHOW_FINGER_POSITIONS = true; // not used yet
+
+        const setup = () => {
+            const vf = new Vex.Flow.Factory({
+                renderer: { elementId: 'output', width: 500, height: 200 },
+            });
+            const score = vf.EasyScore();
+            const system = vf.System();
+
+            return { vf, score, system };
+        }
+
+        const makeNoteRange = (
+            [lowOctave, lowPos],
+            [highOctave, highPos],
+        ) => {
+            const notes = [];
+            for (let octave = lowOctave; octave <= highOctave; octave++) {
+                const startPos = octave === lowOctave ? lowPos : 1;
+                const endPos = octave === highOctave ? highPos : 7;
+                for (let pos = startPos; pos <= endPos; pos++) {
+                    notes.push([octave, pos]);
+                }
+            }
+            return notes;
+        }
+
+        const randomNote = (noteRange) => {
+            return noteRange[Math.floor(Math.random() * noteRange.length)];
+        };
+
+        const makeNotes = (noteRange) => {
+            const notes = [];
+            if (VARY_NOTES) {
+                for (let i = 0; i < 4; i++) {
+                    notes.push(randomNote(noteRange));
+                }
+            } else {
+                const note = randomNote(noteRange);
+                for (let i = 0; i < 4; i++) {
+                    notes.push(note);
+                }
+            }
+            return notes;
+        }
+
+        const makeNoteStr = (notes) => {
+            const letterAtPos = (pos) => 'CDEFGAB'[pos - 1];
+            return notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
+        };
+
+        const doRound = () => {
+            document.getElementById('output').innerHTML = '';
+            const noteStr = makeNoteStr(makeNotes(makeNoteRange(LOW_NOTE, HIGH_NOTE)));
+
+            const { vf, score, system } = setup();
+            system
+                .addStave({
+                    width: 500,
+                    voices: [
+                        score.voice(score.notes(noteStr, { stem: 'auto' })),
+                    ],
+                })
+                .addClef('treble')
+                .addTimeSignature('4/4');
+
+            vf.draw();
+        }
+
+        doRound();
+        window.setInterval(doRound, INTERVAL);
+
+    </script>
+</body>
+</html>
