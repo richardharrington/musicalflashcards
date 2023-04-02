@@ -17,13 +17,13 @@
     <div id="output"></div>
     <script>
 
-        const INTERVAL = 5000;
+        const INTERVAL = 1000;
 
         // [Octave, Position in Octave]
         const LOW_NOTE = [4, 1]; // middle C
         const HIGH_NOTE = [5, 1]; // high C
 
-        const VARY_NOTES = false;
+        const VARY_NOTES = true;
 
         const SHOW_LETTERS = true; // not used yet
         const SHOW_FINGER_POSITIONS = true; // not used yet
@@ -77,6 +77,8 @@
             return notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
         };
 
+        // TODO: Prevent the same note from being shown two rounds in a row if we
+        // are using the same note for all four notes.
         const doRound = () => {
             document.getElementById('output').innerHTML = '';
             const noteStr = makeNoteStr(makeNotes(makeNoteRange(LOW_NOTE, HIGH_NOTE)));
