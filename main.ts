@@ -5,6 +5,7 @@ type Note = [number, number]; // octave, position in octave
 
 const LOW_NOTE: Note = [4, 1]; // middle C
 const HIGH_NOTE: Note = [5, 1]; // high C
+const NUMBER_OF_NOTES = 4; // TODO: Figure out how to make this work with a different number of notes
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
@@ -39,40 +40,64 @@ const randomNote = (noteRange: Array<Note>): Note => {
     return noteRange[Math.floor(Math.random() * noteRange.length)];
 };
 
-const makeNotes = (noteRange: Array<Note>): Array<Note> => {
+const makeRandomNotes = (noteRange: Array<Note>): Array<Note> => {
     const notes: Array<Note> = [];
-    if ((document.getElementById('input-all-notes-equal') as HTMLInputElement).checked) {
-        const note = randomNote(noteRange);
-        for (let i = 0; i < 4; i++) {
-            notes.push(note);
-        }
-    } else {
-        for (let i = 0; i < 4; i++) {
-            notes.push(randomNote(noteRange));
-        }
+    for (let i = 0; i < NUMBER_OF_NOTES; i++) {
+        notes.push(randomNote(noteRange));
     }
     return notes;
 }
+
+const makeRepeatedNotes = (note: Note): Array<Note> => {
+    const notes: Array<Note> = [];
+    for (let i = 0; i < NUMBER_OF_NOTES; i++) {
+        notes.push(note);
+    }
+    return notes;
+};
 
 const makeNoteStr = (notes: Array<Note>): string => {
     const letterAtPos = (pos) => 'CDEFGAB'[pos - 1];
     return notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
 };
 
-// TODO: Prevent the same note from being shown two rounds in a row if we
-// are using the same note for all four notes.
-const doRound = () => {
+const areTwoNotesEqual = (note1: Note | undefined, note2: Note): boolean => {
+    if (!note1 && note2) {
+        return false;
+    }
+    const [octave1, pos1] = note1;
+    const [octave2, pos2] = note2;
+    return octave1 === octave2 && pos1 === pos2;
+};
+
+const doRound = (prevNote?: Note): Note => {
     const outputElem = document.getElementById('output');
     if (!outputElem) {
         throw new Error('No element found with id "output"');
     }
     outputElem.innerHTML = '';
-    const noteStr = makeNoteStr(makeNotes(makeNoteRange(LOW_NOTE, HIGH_NOTE)));
+
+    const noteRange = makeNoteRange(LOW_NOTE, HIGH_NOTE);
+    let notes;
+    const allNotesShouldBeEqual = (document.getElementById('input-all-notes-equal') as HTMLInputElement).checked;
+    if (allNotesShouldBeEqual) {
+        notes = makeRepeatedNotes(randomNote(noteRange.filter((note) => !areTwoNotesEqual(prevNote, note))));
+        console.log(prevNote, notes[0]);
+        console.log(areTwoNotesEqual(prevNote, notes[0]));
+    } else {
+        notes = makeRandomNotes(noteRange);
+    }
+    const noteStr = makeNoteStr(notes);
 
     const { vf, score, system } = setup();
     system
         .addStave({
             voices: [
+                // TODO: To make this actually playable on a metronomic beat
+                // when the user is just seeing the notes for the first
+                // time every few seconds,
+                // put a couple of rests at the beginning of the bar.
+                // Or maybe just one.
                 score.voice(score.notes(noteStr, { stem: 'auto' })),
             ],
         })
@@ -80,6 +105,7 @@ const doRound = () => {
         .addTimeSignature('4/4');
 
     vf.draw();
+    return notes[0];
 }
 
 const getIntervalVal = (elem: HTMLInputElement) => {
@@ -92,12 +118,18 @@ let intervalVal = getIntervalVal(document.getElementById('input-interval') as HT
 
 const resetAndGo = () => {
     window.clearInterval(interval);
-    doRound();
+    // We keep track of the prevNote state so that we
+    // can make sure that the next note is different,
+    // if the user has selected the "all notes should
+    // be the same" option.
+    let prevNote = doRound();
     if (!intervalVal) {
         throw new Error('Invariant: there should always be an interval value here');
     }
     interval = window.setInterval(
-        doRound,
+        () => {
+            prevNote = doRound(prevNote);
+        },
         intervalVal,
     );
 };
