@@ -82,26 +82,40 @@ const doRound = () => {
     vf.draw();
 }
 
+const getIntervalVal = (elem: HTMLInputElement) => {
+    const intervalVal = parseInt(elem.value.trim(), 10);
+    return intervalVal ? intervalVal * 1000 : null;
+}
+
 let interval;
+let intervalVal = getIntervalVal(document.getElementById('input-interval') as HTMLInputElement);
 
 const resetAndGo = () => {
-    console.log(document.getElementById('input-all-notes-equal').value)
-    console.log(document.getElementById('input-interval').value)
     window.clearInterval(interval);
     doRound();
-    console.log("input-interval", parseInt((document.getElementById('input-interval') as HTMLInputElement).value, 10) * 1000);
+    if (!intervalVal) {
+        throw new Error('Invariant: there should always be an interval value here');
+    }
     interval = window.setInterval(
         doRound,
-        parseInt((document.getElementById('input-interval') as HTMLInputElement).value, 10) * 1000
+        intervalVal,
     );
 };
 
 resetAndGo();
 
-// document.body.addEventListener('keypress', (e) => {
-//     if (e.key === ' ') {
-//         resetAndGo();
-//     }
-// });
-// document.getElementById('input-all-notes-equal').addEventListener('change', resetAndGo);
-// document.getElementById('input-interval').addEventListener('change', resetAndGo);
+document.body.addEventListener('keypress', (e) => {
+    if (e.key === ' ') {
+        resetAndGo();
+    }
+});
+
+document.getElementById('input-interval').addEventListener('input', (e) => {
+    const newIntervalVal = getIntervalVal(e.target as HTMLInputElement);
+    if (newIntervalVal) {
+        intervalVal = newIntervalVal;
+        resetAndGo();
+    }
+});
+
+document.getElementById('input-all-notes-equal').addEventListener('change', resetAndGo);
