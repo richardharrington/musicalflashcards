@@ -109,8 +109,8 @@ const doRound = (prevNote?: Note): Note => {
 }
 
 const getIntervalVal = (elem: HTMLInputElement) => {
-    const intervalVal = parseInt(elem.value.trim(), 10);
-    return intervalVal ? intervalVal * 1000 : null;
+    const intervalVal = parseFloat(elem.value.trim());
+    return intervalVal ? Math.floor(intervalVal * 1000) : null;
 }
 
 let interval;
