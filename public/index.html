@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ukulele Flashcards</title>
     <style>
+        #content-container {
+            display: flex;
+            justify-content: center;
+        }
         #content {
-            margin: 0 auto;
-            width: 300px;
+            width: 381px;
         }
         #header {
             text-align: center;
@@ -18,7 +21,6 @@
             font-size: 1.2rem;
         }
         #output-container {
-            width:100%;
             display: flex;
             justify-content: center;
         }
@@ -41,15 +43,17 @@
         <div id="output"></div>
     </div>
 
-    <div id="content">
-        <p>
-            <input type="text" id="input-interval" name="input-interval" value="1">
-            <label for="input-interval">Seconds between changes</label>
-        </p>
-        <p>
-            <input type="checkbox" id="input-all-notes-equal" name="input-all-notes-equal" value="checked"></input>
-            <label for="input-all-notes-equal">Should all four notes be the same?</label>
-        </p>
+    <div id="content-container">
+        <div id="content">
+            <p>
+                <input type="text" id="input-interval" name="input-interval" value="1">
+                <label for="input-interval">Seconds between changes</label>
+            </p>
+            <p>
+                <input type="checkbox" id="input-all-notes-equal" name="input-all-notes-equal" value="checked"></input>
+                <label for="input-all-notes-equal">Should all four notes be the same?</label>
+            </p>
+        </div>
     </div>
 
     <script src="out.js"></script>
