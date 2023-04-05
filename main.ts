@@ -7,6 +7,7 @@ const LOW_NOTE: Note = [4, 1]; // middle C
 const HIGH_NOTE: Note = [5, 1]; // high C
 const NUMBER_OF_COUNTS = 4; // TODO: Figure out how to make this work with a different number of notes
 const NUMBER_OF_INITIAL_RESTS = 1;
+// TODO: Set initial interval here, not in html. Probably just switch to React and jsx.
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
