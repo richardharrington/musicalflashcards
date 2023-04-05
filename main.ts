@@ -5,7 +5,8 @@ type Note = [number, number]; // octave, position in octave
 
 const LOW_NOTE: Note = [4, 1]; // middle C
 const HIGH_NOTE: Note = [5, 1]; // high C
-const NUMBER_OF_NOTES = 4; // TODO: Figure out how to make this work with a different number of notes
+const NUMBER_OF_COUNTS = 4; // TODO: Figure out how to make this work with a different number of notes
+const NUMBER_OF_INITIAL_RESTS = 1;
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
@@ -42,7 +43,7 @@ const randomNote = (noteRange: Array<Note>): Note => {
 
 const makeRandomNotes = (noteRange: Array<Note>): Array<Note> => {
     const notes: Array<Note> = [];
-    for (let i = 0; i < NUMBER_OF_NOTES; i++) {
+    for (let i = 0; i < NUMBER_OF_COUNTS - NUMBER_OF_INITIAL_RESTS; i++) {
         notes.push(randomNote(noteRange));
     }
     return notes;
@@ -50,15 +51,17 @@ const makeRandomNotes = (noteRange: Array<Note>): Array<Note> => {
 
 const makeRepeatedNotes = (note: Note): Array<Note> => {
     const notes: Array<Note> = [];
-    for (let i = 0; i < NUMBER_OF_NOTES; i++) {
+    for (let i = 0; i < NUMBER_OF_COUNTS - NUMBER_OF_INITIAL_RESTS; i++) {
         notes.push(note);
     }
     return notes;
 };
 
 const makeNoteStr = (notes: Array<Note>): string => {
+    const restStr = 'B4/q/r, '.repeat(NUMBER_OF_INITIAL_RESTS);
     const letterAtPos = (pos) => 'CDEFGAB'[pos - 1];
-    return notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
+    const noteStr = notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
+    return restStr + noteStr;
 };
 
 const areTwoNotesEqual = (note1: Note | undefined, note2: Note): boolean => {
@@ -94,10 +97,7 @@ const doRound = (prevNote?: Note): Note => {
         .addStave({
             voices: [
                 // TODO: To make this actually playable on a metronomic beat
-                // when the user is just seeing the notes for the first
-                // time every few seconds,
-                // put a couple of rests at the beginning of the bar.
-                // Or maybe just one.
+                // with visual cues or auditory cues.
                 score.voice(score.notes(noteStr, { stem: 'auto' })),
             ],
         })
