@@ -5,9 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ukulele Flashcards</title>
     <style>
-        #output {
+        #content {
             margin: 0 auto;
-            width: 500px;
+            width: 300px;
+        }
+        #header {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 120px;
+        }
+        p {
+            font-size: 1.2rem;
+        }
+        #output-container {
+            width:100%;
+            display: flex;
+            justify-content: center;
+        }
+        input {
+            font-size: 1.2rem;
+        }
+        #output {
+            transform: scale(2);
+            width: 160px;
             height: 200px;
         }
         #input-interval {
@@ -16,16 +36,21 @@
     </style>
 </head>
 <body>
-    <div id="output"></div>
+    <h1 id="header">Ukulele Flashcards</h1>
+    <div id="output-container">
+        <div id="output"></div>
+    </div>
 
-    <p>
-        <input type="text" id="input-interval" name="input-interval" value="1">
-        <label for="input-interval">Seconds between changes</label>
-    </p>
-    <p>
-        <input type="checkbox" id="input-all-notes-equal" name="input-all-notes-equal" value="checked"></input>
-        <label for="input-all-notes-equal">Should all four notes be the same?</label>
-    </p>
+    <div id="content">
+        <p>
+            <input type="text" id="input-interval" name="input-interval" value="1">
+            <label for="input-interval">Seconds between changes</label>
+        </p>
+        <p>
+            <input type="checkbox" id="input-all-notes-equal" name="input-all-notes-equal" value="checked"></input>
+            <label for="input-all-notes-equal">Should all four notes be the same?</label>
+        </p>
+    </div>
 
     <script src="out.js"></script>
 </body>
