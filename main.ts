@@ -11,13 +11,18 @@ const NUMBER_OF_INITIAL_RESTS = 1;
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
 
+// Takes bpm (notes per minute) and returns interval in
+// milliseconds (interval between rounds, not between notes).
 const getIntervalVal = (elem: HTMLInputElement) => {
-    const intervalVal = parseFloat(elem.value.trim());
-    return intervalVal ? Math.floor(intervalVal * 1000) : null;
+    const bpm = parseFloat(elem.value.trim());
+    if (!bpm) {
+        return null;
+    }
+    return Math.floor(60 / bpm * NUMBER_OF_COUNTS * 1000);
 }
 
 let interval;
-let intervalVal = getIntervalVal(document.getElementById('input-interval') as HTMLInputElement);
+let intervalVal = getIntervalVal(document.getElementById('input-bpm') as HTMLInputElement);
 let countInterval;
 let count = NUMBER_OF_COUNTS;
 
@@ -158,7 +163,7 @@ document.body.addEventListener('keypress', (e) => {
     }
 });
 
-document.getElementById('input-interval').addEventListener('input', (e) => {
+document.getElementById('input-bpm').addEventListener('input', (e) => {
     const newIntervalVal = getIntervalVal(e.target as HTMLInputElement);
     if (newIntervalVal) {
         intervalVal = newIntervalVal;
