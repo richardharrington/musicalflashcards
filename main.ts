@@ -98,6 +98,13 @@ const advanceCount = () => {
     count = nextCount;
 }
 
+const clearCount = () => {
+    for (let i = 1; i <= NUMBER_OF_COUNTS; i++) {
+        const elem = document.getElementById(`count-${i}`);
+        elem.style.opacity = '0';
+    }
+}
+
 const doRound = (prevNote?: Note): Note => {
     const outputElem = document.getElementById('output');
     if (!outputElem) {
@@ -136,6 +143,7 @@ const doRound = (prevNote?: Note): Note => {
 const resetAndGo = () => {
     window.clearInterval(interval);
     window.clearInterval(countInterval);
+    clearCount();
     count = NUMBER_OF_COUNTS;
     // We keep track of the prevNote state so that we
     // can make sure that the next note is different,
