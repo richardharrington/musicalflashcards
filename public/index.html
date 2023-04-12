@@ -12,10 +12,23 @@
         #content {
             width: 381px;
         }
+        #visual-metronome {
+            display: flex;
+            justify-content: space-between;
+            width: 160px;
+            margin: 0 auto;
+            margin-bottom: 50px;
+            font-size: 3rem;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-weight: bold;
+        }
+        #visual-metronome span {
+            opacity: 0;
+        }
         #header {
             text-align: center;
             font-size: 3rem;
-            margin-bottom: 120px;
+            margin-bottom: 60px;
         }
         p {
             font-size: 1.2rem;
@@ -30,7 +43,7 @@
         #output {
             transform: scale(2);
             width: 160px;
-            height: 200px;
+            height: 150px;
         }
         #input-interval {
             width: 30px;
@@ -42,6 +55,16 @@
     <div id="output-container">
         <div id="output"></div>
     </div>
+    <p id="visual-metronome">
+        <!-- TODO: Don't hard-code these, make NUMBER_OF_COUNTS of them -->
+        <span id="count-1">1</span>
+        &nbsp;
+        <span id="count-2">2</span>
+        &nbsp;
+        <span id="count-3">3</span>
+        &nbsp;
+        <span id="count-4">4</span>
+    </p>
 
     <div id="content-container">
         <div id="content">
@@ -57,7 +80,7 @@
                 Coming soon:
                 <ul>
                     <li>
-                        Metronomic audio or visual cues to indicate when each note is to be played.
+                        Option to have metronomic audio cues for the notes.
                     </li>
                     <li>
                         Option to annotate each note with its letter

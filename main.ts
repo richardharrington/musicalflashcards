@@ -7,10 +7,19 @@ const LOW_NOTE: Note = [4, 1]; // middle C
 const HIGH_NOTE: Note = [5, 1]; // high C
 const NUMBER_OF_COUNTS = 4; // TODO: Figure out how to make this work with a different number of notes
 const NUMBER_OF_INITIAL_RESTS = 1;
-// TODO: Set initial interval here, not in html. Probably just switch to React and jsx.
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
+
+const getIntervalVal = (elem: HTMLInputElement) => {
+    const intervalVal = parseFloat(elem.value.trim());
+    return intervalVal ? Math.floor(intervalVal * 1000) : null;
+}
+
+let interval;
+let intervalVal = getIntervalVal(document.getElementById('input-interval') as HTMLInputElement);
+let countInterval;
+let count = NUMBER_OF_COUNTS;
 
 
 const setup = (): { vf: Factory, score: EasyScore, system: System } => {
@@ -74,6 +83,16 @@ const areTwoNotesEqual = (note1: Note | undefined, note2: Note): boolean => {
     return octave1 === octave2 && pos1 === pos2;
 };
 
+const advanceCount = () => {
+    // Count is indexed from 1
+    const nextCount = count % NUMBER_OF_COUNTS + 1;
+    const prevElem = document.getElementById(`count-${count}`);
+    const nextElem = document.getElementById(`count-${nextCount}`);
+    prevElem.style.opacity = '0';
+    nextElem.style.opacity = '1';
+    count = nextCount;
+}
+
 const doRound = (prevNote?: Note): Note => {
     const outputElem = document.getElementById('output');
     if (!outputElem) {
@@ -109,16 +128,10 @@ const doRound = (prevNote?: Note): Note => {
     return notes[0];
 }
 
-const getIntervalVal = (elem: HTMLInputElement) => {
-    const intervalVal = parseFloat(elem.value.trim());
-    return intervalVal ? Math.floor(intervalVal * 1000) : null;
-}
-
-let interval;
-let intervalVal = getIntervalVal(document.getElementById('input-interval') as HTMLInputElement);
-
 const resetAndGo = () => {
     window.clearInterval(interval);
+    window.clearInterval(countInterval);
+    count = NUMBER_OF_COUNTS;
     // We keep track of the prevNote state so that we
     // can make sure that the next note is different,
     // if the user has selected the "all notes should
@@ -133,6 +146,8 @@ const resetAndGo = () => {
         },
         intervalVal,
     );
+    advanceCount();
+    countInterval = window.setInterval(advanceCount, intervalVal / NUMBER_OF_COUNTS);
 };
 
 resetAndGo();
