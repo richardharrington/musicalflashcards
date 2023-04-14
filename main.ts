@@ -6,7 +6,6 @@ type Note = [number, number]; // octave, position in octave
 const LOW_NOTE: Note = [4, 1]; // middle C
 const HIGH_NOTE: Note = [5, 1]; // high C
 const NUMBER_OF_COUNTS = 4; // TODO: Figure out how to make this work with a different number of notes
-const NUMBER_OF_INITIAL_RESTS = 1;
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
@@ -21,10 +20,27 @@ const getIntervalVal = (elem: HTMLInputElement) => {
     return Math.floor(60 / bpm * NUMBER_OF_COUNTS * 1000);
 }
 
+const getNumberOfRests = () => {
+    const radio1 = document.getElementById('input-rests-1') as HTMLInputElement;
+    const radio2 = document.getElementById('input-rests-2') as HTMLInputElement;
+    const radio3 = document.getElementById('input-rests-3') as HTMLInputElement;
+    if (radio1.checked) {
+        return 1;
+    } else if (radio2.checked) {
+        return 2;
+    } else if (radio3.checked) {
+        return 3;
+    } else {
+        throw new Error('No radio button checked');
+    }
+}
+
+
 let interval;
 let intervalVal = getIntervalVal(document.getElementById('input-bpm') as HTMLInputElement);
 let countInterval;
 let count = NUMBER_OF_COUNTS;
+let numberOfRests = getNumberOfRests();
 
 
 const setup = (): { vf: Factory, score: EasyScore, system: System } => {
@@ -58,7 +74,7 @@ const randomNote = (noteRange: Array<Note>): Note => {
 
 const makeRandomNotes = (noteRange: Array<Note>): Array<Note> => {
     const notes: Array<Note> = [];
-    for (let i = 0; i < NUMBER_OF_COUNTS - NUMBER_OF_INITIAL_RESTS; i++) {
+    for (let i = 0; i < NUMBER_OF_COUNTS - numberOfRests; i++) {
         notes.push(randomNote(noteRange));
     }
     return notes;
@@ -66,14 +82,22 @@ const makeRandomNotes = (noteRange: Array<Note>): Array<Note> => {
 
 const makeRepeatedNotes = (note: Note): Array<Note> => {
     const notes: Array<Note> = [];
-    for (let i = 0; i < NUMBER_OF_COUNTS - NUMBER_OF_INITIAL_RESTS; i++) {
+    for (let i = 0; i < NUMBER_OF_COUNTS - numberOfRests; i++) {
         notes.push(note);
     }
     return notes;
 };
 
 const makeNoteStr = (notes: Array<Note>): string => {
-    const restStr = 'B4/q/r, '.repeat(NUMBER_OF_INITIAL_RESTS);
+    console.log(numberOfRests)
+    let restStr = '';
+    if (numberOfRests >= 2) {
+        restStr += 'B4/h/r, ';
+    }
+    if (numberOfRests === 1 || numberOfRests === 3) {
+        restStr += 'B4/q/r, ';
+    }
+
     const letterAtPos = (pos) => 'CDEFGAB'[pos - 1];
     const noteStr = notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
     return restStr + noteStr;
@@ -117,8 +141,6 @@ const doRound = (prevNote?: Note): Note => {
     const allNotesShouldBeEqual = (document.getElementById('input-all-notes-equal') as HTMLInputElement).checked;
     if (allNotesShouldBeEqual) {
         notes = makeRepeatedNotes(randomNote(noteRange.filter((note) => !areTwoNotesEqual(prevNote, note))));
-        console.log(prevNote, notes[0]);
-        console.log(areTwoNotesEqual(prevNote, notes[0]));
     } else {
         notes = makeRandomNotes(noteRange);
     }
@@ -178,5 +200,14 @@ document.getElementById('input-bpm').addEventListener('input', (e) => {
         resetAndGo();
     }
 });
+
+for (let i = 1; i <= 3; i++) {
+    const radioButton = document.getElementById(`input-rests-${i}`) as HTMLInputElement;
+    radioButton.addEventListener('click', (e) => {
+        numberOfRests = getNumberOfRests();
+        resetAndGo();
+    });
+}
+
 
 document.getElementById('input-all-notes-equal').addEventListener('change', resetAndGo);
