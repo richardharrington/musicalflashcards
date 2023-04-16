@@ -32,13 +32,13 @@ const BEATS_PER_BAR = 4; // TODO: Figure out how to make this work with a differ
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
 
-// Takes beatsPerMinute and returns interval between bars in milliseconds
-const getBarInterval = (elem: HTMLInputElement) => {
+// Takes beatsPerMinute and returns interval between beats in milliseconds
+const getBeatInterval = (elem: HTMLInputElement) => {
   const beatsPerMinute = parseFloat(elem.value.trim());
   if (!beatsPerMinute) {
     return null;
   }
-  return Math.floor((1000 * 60 * BEATS_PER_BAR) / beatsPerMinute);
+  return Math.floor((1000 * 60) / beatsPerMinute);
 }
 
 const getRestsPerBar = () => {
@@ -56,11 +56,11 @@ const getRestsPerBar = () => {
   }
 }
 
-
-let barIntervalId: number | undefined;
-let barInterval = getBarInterval(document.getElementById('input-bpm') as HTMLInputElement);
+let beatInterval = getBeatInterval(document.getElementById('input-bpm') as HTMLInputElement);
 let beatIntervalId: number | undefined;
 let beatIdx = BEATS_PER_BAR;
+
+let latestNote: Note | undefined;
 
 let restsPerBar = getRestsPerBar();
 
@@ -135,17 +135,20 @@ const areTwoNotesEqual = (note1: Note | undefined, note2: Note | undefined): boo
   return octave1 === octave2 && pos1 === pos2;
 };
 
-const advanceBeatIdx = () => {
+const renderBeat = () => {
   // Beat is indexed from 1
   const nextBeatIdx = beatIdx % BEATS_PER_BAR + 1;
   const prevElem = document.getElementById(`beat-${beatIdx}`);
   const nextElem = document.getElementById(`beat-${nextBeatIdx}`);
-  // TODO (here and everywhewe we use .getElementById): Come up
+  // TODO (here and everywhere we use .getElementById): Come up
   // with a system for giving better errors here than whatever
   // these exclamation points will give us.
   prevElem!.style.opacity = '0';
   nextElem!.style.opacity = '1';
   beatIdx = nextBeatIdx;
+  if (beatIdx === 1) {
+    renderBar();
+  }
 }
 
 const clearBeatsDisplay = () => {
@@ -155,24 +158,27 @@ const clearBeatsDisplay = () => {
   }
 }
 
-const renderBar = (prevNote?: Note): Note => {
+const clearBar = () => {
   const outputElem = document.getElementById('output');
   if (!outputElem) {
     throw new Error('No element found with id "output"');
   }
   outputElem.innerHTML = '';
+}
 
+const renderBar = () => {
+  clearBar();
   const noteRange = makeNoteRange(LOW_NOTE, HIGH_NOTE);
   let notes;
   const allNotesShouldBeEqual = (document.getElementById('input-all-notes-equal') as HTMLInputElement).checked;
   if (allNotesShouldBeEqual) {
-    notes = makeRepeatedNotes(makeRandomNote(noteRange.filter((note) => !areTwoNotesEqual(prevNote, note))));
+    notes = makeRepeatedNotes(makeRandomNote(noteRange.filter((note) => !areTwoNotesEqual(latestNote, note))));
   } else {
     notes = makeRandomNotes(noteRange);
   }
-  const noteStr = makeNoteStr(notes);
 
   const { vf, score, system } = setup();
+  const noteStr = makeNoteStr(notes);
   system
     .addStave({
       voices: [
@@ -185,31 +191,19 @@ const renderBar = (prevNote?: Note): Note => {
     .addTimeSignature('4/4');
 
   vf.draw();
-  return notes[0];
+
+  latestNote = notes[notes.length - 1];
 }
 
 const resetAndGo = () => {
-  window.clearInterval(barIntervalId);
   window.clearInterval(beatIntervalId);
   clearBeatsDisplay();
   beatIdx = BEATS_PER_BAR;
-  // We keep track of the prevNote state so that we
-  // can make sure that the next note is different,
-  // if the user has selected the "all notes should
-  // be the same" option.
-  let prevNote = renderBar();
-  if (!barInterval) {
-    throw new Error('Invariant: there should always be a barInterval value here');
+  renderBeat();
+  if (!beatInterval) {
+    throw new Error('Invariant: there should always be a value at this point');
   }
-  barIntervalId = window.setInterval(
-    () => {
-      prevNote = renderBar(prevNote);
-    },
-    barInterval,
-  );
-  advanceBeatIdx();
-  const beatInterval = barInterval / BEATS_PER_BAR;
-  beatIntervalId = window.setInterval(advanceBeatIdx, beatInterval);
+  beatIntervalId = window.setInterval(renderBeat, beatInterval);
 };
 
 resetAndGo();
@@ -221,9 +215,9 @@ document.body.addEventListener('keypress', (e) => {
 });
 
 document.getElementById('input-bpm')!.addEventListener('input', (e) => {
-  const newBarInterval = getBarInterval(e.target as HTMLInputElement);
-  if (newBarInterval) {
-    barInterval = newBarInterval;
+  const newBeatInterval = getBeatInterval(e.target as HTMLInputElement);
+  if (newBeatInterval) {
+    beatInterval = newBeatInterval;
     resetAndGo();
   }
 });
