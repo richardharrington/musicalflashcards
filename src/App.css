@@ -36,3 +36,56 @@
     transform: rotate(360deg);
   }
 }
+
+/* Stuff not created by create-react-app */
+
+#content-container {
+  display: flex;
+  justify-content: center;
+}
+#content {
+  width: 381px;
+}
+#visual-metronome {
+  display: flex;
+  justify-content: space-between;
+  width: 160px;
+  margin: 0 auto;
+  margin-bottom: 50px;
+  font-size: 3rem;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: bold;
+}
+#visual-metronome span {
+  opacity: 0;
+}
+#header {
+  text-align: center;
+  font-size: 3rem;
+  margin-bottom: 60px;
+}
+p {
+  font-size: 1.2rem;
+}
+#output-container {
+  display: flex;
+  justify-content: center;
+}
+input {
+  font-size: 1.2rem;
+}
+
+.rests-input {
+  margin-right: 10px;
+}
+
+#output {
+  transform: scale(2);
+  width: 160px;
+  height: 150px;
+}
+#input-bpm {
+  width: 60px;
+  margin-right: 5px;
+}
+
