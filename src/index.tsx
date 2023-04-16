@@ -58,9 +58,9 @@ const getNumberOfRests = () => {
 }
 
 
-let interval;
+let interval: number | undefined;
 let intervalVal = getIntervalVal(document.getElementById('input-bpm') as HTMLInputElement);
-let countInterval;
+let countInterval: number | undefined;
 let count = NUMBER_OF_COUNTS;
 let numberOfRests = getNumberOfRests();
 
@@ -120,13 +120,16 @@ const makeNoteStr = (notes: Array<Note>): string => {
         restStr += 'B4/q/r, ';
     }
 
-    const letterAtPos = (pos) => 'CDEFGAB'[pos - 1];
+    const letterAtPos = (pos: number) => 'CDEFGAB'[pos - 1];
     const noteStr = notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
     return restStr + noteStr;
 };
 
-const areTwoNotesEqual = (note1: Note | undefined, note2: Note): boolean => {
-    if (!note1 && note2) {
+const areTwoNotesEqual = (note1: Note | undefined, note2: Note | undefined): boolean => {
+    if (!note1 && !note2) {
+        return true;
+    }
+    if (!note1 || !note2) {
         return false;
     }
     const [octave1, pos1] = note1;
@@ -139,15 +142,18 @@ const advanceCount = () => {
     const nextCount = count % NUMBER_OF_COUNTS + 1;
     const prevElem = document.getElementById(`count-${count}`);
     const nextElem = document.getElementById(`count-${nextCount}`);
-    prevElem.style.opacity = '0';
-    nextElem.style.opacity = '1';
+    // TODO (here and everywhewe we use .getElementById): Come up
+    // with a system for giving better errors here than whatever
+    // these exclamation points will give us.
+    prevElem!.style.opacity = '0';
+    nextElem!.style.opacity = '1';
     count = nextCount;
 }
 
 const clearCount = () => {
     for (let i = 1; i <= NUMBER_OF_COUNTS; i++) {
         const elem = document.getElementById(`count-${i}`);
-        elem.style.opacity = '0';
+        elem!.style.opacity = '0';
     }
 }
 
@@ -215,7 +221,7 @@ document.body.addEventListener('keypress', (e) => {
     }
 });
 
-document.getElementById('input-bpm').addEventListener('input', (e) => {
+document.getElementById('input-bpm')!.addEventListener('input', (e) => {
     const newIntervalVal = getIntervalVal(e.target as HTMLInputElement);
     if (newIntervalVal) {
         intervalVal = newIntervalVal;
@@ -232,4 +238,4 @@ for (let i = 1; i <= 3; i++) {
 }
 
 
-document.getElementById('input-all-notes-equal').addEventListener('change', resetAndGo);
+document.getElementById('input-all-notes-equal')!.addEventListener('change', resetAndGo);
