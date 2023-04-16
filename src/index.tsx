@@ -27,22 +27,21 @@ type Note = [number, number]; // octave, position in octave
 
 const LOW_NOTE: Note = [4, 1]; // middle C
 const HIGH_NOTE: Note = [5, 1]; // high C
-const NUMBER_OF_COUNTS = 4; // TODO: Figure out how to make this work with a different number of notes
+const BEATS_PER_BAR = 4; // TODO: Figure out how to make this work with a different number of notes
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
 
-// Takes bpm (notes per minute) and returns interval in
-// milliseconds (interval between rounds, not between notes).
-const getIntervalVal = (elem: HTMLInputElement) => {
-  const bpm = parseFloat(elem.value.trim());
-  if (!bpm) {
+// Takes beatsPerMinute and returns interval between bars in milliseconds
+const getBarInterval = (elem: HTMLInputElement) => {
+  const beatsPerMinute = parseFloat(elem.value.trim());
+  if (!beatsPerMinute) {
     return null;
   }
-  return Math.floor(60 / bpm * NUMBER_OF_COUNTS * 1000);
+  return Math.floor((1000 * 60 * BEATS_PER_BAR) / beatsPerMinute);
 }
 
-const getNumberOfRests = () => {
+const getRestsPerBar = () => {
   const radio1 = document.getElementById('input-rests-1') as HTMLInputElement;
   const radio2 = document.getElementById('input-rests-2') as HTMLInputElement;
   const radio3 = document.getElementById('input-rests-3') as HTMLInputElement;
@@ -58,12 +57,12 @@ const getNumberOfRests = () => {
 }
 
 
-let interval: number | undefined;
-let intervalVal = getIntervalVal(document.getElementById('input-bpm') as HTMLInputElement);
-let countInterval: number | undefined;
-let count = NUMBER_OF_COUNTS;
-let numberOfRests = getNumberOfRests();
+let barIntervalId: number | undefined;
+let barInterval = getBarInterval(document.getElementById('input-bpm') as HTMLInputElement);
+let beatIntervalId: number | undefined;
+let beatIdx = BEATS_PER_BAR;
 
+let restsPerBar = getRestsPerBar();
 
 const setup = (): { vf: Factory, score: EasyScore, system: System } => {
   const vf = new Vex.Flow.Factory({
@@ -90,33 +89,32 @@ const makeNoteRange = (
   return notes;
 }
 
-const randomNote = (noteRange: Array<Note>): Note => {
+const makeRandomNote = (noteRange: Array<Note>): Note => {
   return noteRange[Math.floor(Math.random() * noteRange.length)];
 };
 
 const makeRandomNotes = (noteRange: Array<Note>): Array<Note> => {
   const notes: Array<Note> = [];
-  for (let i = 0; i < NUMBER_OF_COUNTS - numberOfRests; i++) {
-    notes.push(randomNote(noteRange));
+  for (let i = 0; i < BEATS_PER_BAR - restsPerBar; i++) {
+    notes.push(makeRandomNote(noteRange));
   }
   return notes;
 }
 
 const makeRepeatedNotes = (note: Note): Array<Note> => {
   const notes: Array<Note> = [];
-  for (let i = 0; i < NUMBER_OF_COUNTS - numberOfRests; i++) {
+  for (let i = 0; i < BEATS_PER_BAR - restsPerBar; i++) {
     notes.push(note);
   }
   return notes;
 };
 
 const makeNoteStr = (notes: Array<Note>): string => {
-  console.log(numberOfRests)
   let restStr = '';
-  if (numberOfRests >= 2) {
+  if (restsPerBar >= 2) {
     restStr += 'B4/h/r, ';
   }
-  if (numberOfRests === 1 || numberOfRests === 3) {
+  if (restsPerBar === 1 || restsPerBar === 3) {
     restStr += 'B4/q/r, ';
   }
 
@@ -137,27 +135,27 @@ const areTwoNotesEqual = (note1: Note | undefined, note2: Note | undefined): boo
   return octave1 === octave2 && pos1 === pos2;
 };
 
-const advanceCount = () => {
-  // Count is indexed from 1
-  const nextCount = count % NUMBER_OF_COUNTS + 1;
-  const prevElem = document.getElementById(`count-${count}`);
-  const nextElem = document.getElementById(`count-${nextCount}`);
+const advanceBeatIdx = () => {
+  // Beat is indexed from 1
+  const nextBeatIdx = beatIdx % BEATS_PER_BAR + 1;
+  const prevElem = document.getElementById(`beat-${beatIdx}`);
+  const nextElem = document.getElementById(`beat-${nextBeatIdx}`);
   // TODO (here and everywhewe we use .getElementById): Come up
   // with a system for giving better errors here than whatever
   // these exclamation points will give us.
   prevElem!.style.opacity = '0';
   nextElem!.style.opacity = '1';
-  count = nextCount;
+  beatIdx = nextBeatIdx;
 }
 
-const clearCount = () => {
-  for (let i = 1; i <= NUMBER_OF_COUNTS; i++) {
-    const elem = document.getElementById(`count-${i}`);
+const clearBeatsDisplay = () => {
+  for (let i = 1; i <= BEATS_PER_BAR; i++) {
+    const elem = document.getElementById(`beat-${i}`);
     elem!.style.opacity = '0';
   }
 }
 
-const doRound = (prevNote?: Note): Note => {
+const renderBar = (prevNote?: Note): Note => {
   const outputElem = document.getElementById('output');
   if (!outputElem) {
     throw new Error('No element found with id "output"');
@@ -168,7 +166,7 @@ const doRound = (prevNote?: Note): Note => {
   let notes;
   const allNotesShouldBeEqual = (document.getElementById('input-all-notes-equal') as HTMLInputElement).checked;
   if (allNotesShouldBeEqual) {
-    notes = makeRepeatedNotes(randomNote(noteRange.filter((note) => !areTwoNotesEqual(prevNote, note))));
+    notes = makeRepeatedNotes(makeRandomNote(noteRange.filter((note) => !areTwoNotesEqual(prevNote, note))));
   } else {
     notes = makeRandomNotes(noteRange);
   }
@@ -191,26 +189,27 @@ const doRound = (prevNote?: Note): Note => {
 }
 
 const resetAndGo = () => {
-  window.clearInterval(interval);
-  window.clearInterval(countInterval);
-  clearCount();
-  count = NUMBER_OF_COUNTS;
+  window.clearInterval(barIntervalId);
+  window.clearInterval(beatIntervalId);
+  clearBeatsDisplay();
+  beatIdx = BEATS_PER_BAR;
   // We keep track of the prevNote state so that we
   // can make sure that the next note is different,
   // if the user has selected the "all notes should
   // be the same" option.
-  let prevNote = doRound();
-  if (!intervalVal) {
-    throw new Error('Invariant: there should always be an interval value here');
+  let prevNote = renderBar();
+  if (!barInterval) {
+    throw new Error('Invariant: there should always be a barInterval value here');
   }
-  interval = window.setInterval(
+  barIntervalId = window.setInterval(
     () => {
-      prevNote = doRound(prevNote);
+      prevNote = renderBar(prevNote);
     },
-    intervalVal,
+    barInterval,
   );
-  advanceCount();
-  countInterval = window.setInterval(advanceCount, intervalVal / NUMBER_OF_COUNTS);
+  advanceBeatIdx();
+  const beatInterval = barInterval / BEATS_PER_BAR;
+  beatIntervalId = window.setInterval(advanceBeatIdx, beatInterval);
 };
 
 resetAndGo();
@@ -222,9 +221,9 @@ document.body.addEventListener('keypress', (e) => {
 });
 
 document.getElementById('input-bpm')!.addEventListener('input', (e) => {
-  const newIntervalVal = getIntervalVal(e.target as HTMLInputElement);
-  if (newIntervalVal) {
-    intervalVal = newIntervalVal;
+  const newBarInterval = getBarInterval(e.target as HTMLInputElement);
+  if (newBarInterval) {
+    barInterval = newBarInterval;
     resetAndGo();
   }
 });
@@ -232,10 +231,9 @@ document.getElementById('input-bpm')!.addEventListener('input', (e) => {
 for (let i = 1; i <= 3; i++) {
   const radioButton = document.getElementById(`input-rests-${i}`) as HTMLInputElement;
   radioButton.addEventListener('click', (e) => {
-    numberOfRests = getNumberOfRests();
+    restsPerBar = getRestsPerBar();
     resetAndGo();
   });
 }
-
 
 document.getElementById('input-all-notes-equal')!.addEventListener('change', resetAndGo);
