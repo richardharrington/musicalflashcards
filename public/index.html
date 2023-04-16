@@ -17,6 +17,14 @@
     <link rel="manifest" href="/manifest.json" />
     <title>Musical Flashcards</title>
     <script src="/assets/index.js" async defer></script>
+    <!--
+      live-reload.js is .gitignored so it won't be checked in and end
+      up in production. To do live-reloading in development, create
+      /public/live-reload.js with the following contents:
+
+      new EventSource('/esbuild').addEventListener('change', () => location.reload());
+    -->
+    <script src="/live-reload.js"></script>
     <link rel="stylesheet" href="/assets/index.css"/>
   </head>
   <body>

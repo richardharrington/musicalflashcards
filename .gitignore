@@ -6,6 +6,9 @@
 # testing
 /coverage
 
+# live-reload
+/public/live-reload.js
+
 # production
 /public/assets/index.css
 /public/assets/index.js
