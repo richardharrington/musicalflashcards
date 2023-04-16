@@ -1,92 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Website to help people learn to read musical notes"
-    />
-    <link rel="apple-touch-icon" href="/logo192.png" />
-    <!--
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Website to help people learn to read musical notes" />
+  <link rel="apple-touch-icon" href="/logo192.png" />
+  <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
-    <link rel="manifest" href="/manifest.json" />
-    <title>Musical Flashcards</title>
-    <script src="/assets/index.js" async defer></script>
-    <!--
+  <link rel="manifest" href="/manifest.json" />
+  <title>Musical Flashcards</title>
+  <script src="/assets/index.js" async defer></script>
+  <!--
       live-reload.js is .gitignored so it won't be checked in and end
       up in production. To do live-reloading in development, create
       /public/live-reload.js with the following contents:
 
       new EventSource('/esbuild').addEventListener('change', () => location.reload());
     -->
-    <script src="/live-reload.js"></script>
-    <link rel="stylesheet" href="/assets/index.css"/>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+  <script src="/live-reload.js"></script>
+  <link rel="stylesheet" href="/assets/index.css" />
+</head>
 
-    <!-- From original site -->
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
 
-    <h1 id="header">Musical Flashcards</h1>
-    <div id="output-container">
-      <div id="output"></div>
+  <!-- From original site -->
+
+  <h1 id="header">Musical Flashcards</h1>
+  <div id="output-container">
+    <div id="output"></div>
+  </div>
+  <p id="visual-metronome">
+    <!-- TODO: Don't hard-code these, make NUMBER_OF_COUNTS of them -->
+    <span id="count-1">1</span>
+    &nbsp;
+    <span id="count-2">2</span>
+    &nbsp;
+    <span id="count-3">3</span>
+    &nbsp;
+    <span id="count-4">4</span>
+  </p>
+
+  <div id="content-container">
+    <div id="content">
+      <p>
+        <input type="text" id="input-bpm" name="input-bpm" value="100">
+        <label for="input-bpm">Beats per minute</label>
+      </p>
+      <p>
+        <span class="rests-input">
+          <input type="radio" id="input-rests-1" name="input-rests" value="1" checked></input>
+          <label for="input-rests-1">1 rest</label>
+        </span>
+        <span class="rests-input">
+          <input type="radio" id="input-rests-2" name="input-rests" value="2"></input>
+          <label for="input-rests-2">2 rests</label>
+        </span>
+        <span class="rests-input">
+          <input type="radio" id="input-rests-3" name="input-rests" value="3"></input>
+          <label for="input-rests-3">3 rests</label>
+        </span>
+      </p>
+      <p>
+        <input type="checkbox" id="input-all-notes-equal" name="input-all-notes-equal" value="checked"></input>
+        <label for="input-all-notes-equal">Make all notes in each round the same note</label>
+      </p>
+      <p>
+        Coming soon:
+      <ul>
+        <li>
+          Option to have metronomic audio cues for the notes.
+        </li>
+        <li>
+          Option to annotate each note with its letter
+        </li>
+        <li>
+          Option to annotate each note with its finger number
+        </li>
+      </ul>
+      </p>
     </div>
-    <p id="visual-metronome">
-      <!-- TODO: Don't hard-code these, make NUMBER_OF_COUNTS of them -->
-      <span id="count-1">1</span>
-      &nbsp;
-      <span id="count-2">2</span>
-      &nbsp;
-      <span id="count-3">3</span>
-      &nbsp;
-      <span id="count-4">4</span>
-    </p>
+  </div>
+</body>
 
-    <div id="content-container">
-      <div id="content">
-        <p>
-          <input type="text" id="input-bpm" name="input-bpm" value="100">
-          <label for="input-bpm">Beats per minute</label>
-        </p>
-        <p>
-          <span class="rests-input">
-            <input type="radio" id="input-rests-1" name="input-rests" value="1" checked></input>
-            <label for="input-rests-1">1 rest</label>
-          </span>
-          <span class="rests-input">
-            <input type="radio" id="input-rests-2" name="input-rests" value="2"></input>
-            <label for="input-rests-2">2 rests</label>
-          </span>
-          <span class="rests-input">
-            <input type="radio" id="input-rests-3" name="input-rests" value="3"></input>
-            <label for="input-rests-3">3 rests</label>
-          </span>
-        </p>
-        <p>
-          <input type="checkbox" id="input-all-notes-equal" name="input-all-notes-equal" value="checked"></input>
-          <label for="input-all-notes-equal">Make all notes in each round the same note</label>
-        </p>
-        <p>
-          Coming soon:
-          <ul>
-            <li>
-              Option to have metronomic audio cues for the notes.
-            </li>
-            <li>
-              Option to annotate each note with its letter
-            </li>
-            <li>
-              Option to annotate each note with its finger number
-            </li>
-          </ul>
-        </p>
-      </div>
-    </div>
-  </body>
 </html>
