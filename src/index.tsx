@@ -60,8 +60,6 @@ let beatInterval = getBeatInterval(document.getElementById('input-bpm') as HTMLI
 let beatIntervalId: number | undefined;
 let beatIdx = BEATS_PER_BAR;
 
-let latestNote: Note | undefined;
-
 let restsPerBar = getRestsPerBar();
 
 const setup = (): { vf: Factory, score: EasyScore, system: System } => {
@@ -172,7 +170,7 @@ const renderBar = () => {
   let notes;
   const allNotesShouldBeEqual = (document.getElementById('input-all-notes-equal') as HTMLInputElement).checked;
   if (allNotesShouldBeEqual) {
-    notes = makeRepeatedNotes(makeRandomNote(noteRange.filter((note) => !areTwoNotesEqual(latestNote, note))));
+    notes = makeRepeatedNotes(makeRandomNote(noteRange));
   } else {
     notes = makeRandomNotes(noteRange);
   }
@@ -191,8 +189,6 @@ const renderBar = () => {
     .addTimeSignature('4/4');
 
   vf.draw();
-
-  latestNote = notes[notes.length - 1];
 }
 
 const resetAndGo = () => {
