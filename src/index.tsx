@@ -25,8 +25,8 @@ import type { EasyScore, System, Factory } from 'vexflow';
 
 type Note = [number, number]; // octave, position in octave
 
-const LOW_NOTE: Note = [4, 1]; // middle C
-const HIGH_NOTE: Note = [5, 1]; // high C
+const LOW_NOTE: Note = [3, 5]; // low G
+const HIGH_NOTE: Note = [5, 2]; // high D
 const BEATS_PER_BAR = 4; // TODO: Figure out how to make this work with a different number of notes
 
 // const SHOW_LETTERS = true; // not used yet
