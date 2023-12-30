@@ -1,14 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
 import VisualMetronome from './components/VisualMetronome.tsx'
 import './index.css'
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <VisualMetronome />
-  </React.StrictMode>,
-)
 
 // Start of code from original site:
 
@@ -49,14 +42,22 @@ const getRestsPerBar = () => {
 }
 
 let beatInterval = getBeatInterval(document.getElementById('input-bpm') as HTMLInputElement);
-let beatIntervalId: number | undefined;
-let beatIdx = BEATS_PER_BAR;
 
 let restsPerBar = getRestsPerBar();
 
-const setup = (): { vf: Factory, score: EasyScore, system: System } => {
+// TODO: Tie this into user input for resetting things.
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <VisualMetronome
+      beatsPerBar={BEATS_PER_BAR}
+      beatInterval={beatInterval}
+    />
+  </React.StrictMode>,
+)
+
+const setup = (elementId: string): { vf: Factory, score: EasyScore, system: System } => {
   const vf = new Vex.Flow.Factory({
-    renderer: { elementId: 'output', width: 500, height: 200 },
+    renderer: { elementId, width: 500, height: 200 },
   });
   const score = vf.EasyScore();
   const system = vf.System();
@@ -113,39 +114,16 @@ const makeNoteStr = (notes: Array<Note>): string => {
   return restStr + noteStr;
 };
 
-const renderBeat = () => {
-  // Beat is indexed from 1
-  const nextBeatIdx = beatIdx % BEATS_PER_BAR + 1;
-  const prevElem = document.getElementById(`beat-${beatIdx}`);
-  const nextElem = document.getElementById(`beat-${nextBeatIdx}`);
-  // TODO (here and everywhere we use .getElementById): Come up
-  // with a system for giving better errors here than whatever
-  // these exclamation points will give us.
-  prevElem!.style.opacity = '0';
-  nextElem!.style.opacity = '1';
-  beatIdx = nextBeatIdx;
-  if (beatIdx === 1) {
-    renderBar();
-  }
-}
-
-const clearBeatsDisplay = () => {
-  for (let i = 1; i <= BEATS_PER_BAR; i++) {
-    const elem = document.getElementById(`beat-${i}`);
-    elem!.style.opacity = '0';
-  }
-}
-
-const clearBar = () => {
-  const outputElem = document.getElementById('output');
+const clearBar = (elementId: string) => {
+  const outputElem = document.getElementById(elementId);
   if (!outputElem) {
-    throw new Error('No element found with id "output"');
+    throw new Error(`No element found with id "${elementId}"`);
   }
   outputElem.innerHTML = '';
 }
 
-const renderBar = () => {
-  clearBar();
+const renderBar = (elementId: string) => {
+  clearBar(elementId);
   const noteRange = makeNoteRange(LOW_NOTE, HIGH_NOTE);
   let notes;
   const allNotesShouldBeEqual = (document.getElementById('input-all-notes-equal') as HTMLInputElement).checked;
@@ -155,7 +133,7 @@ const renderBar = () => {
     notes = makeRandomNotes(noteRange);
   }
 
-  const { vf, score, system } = setup();
+  const { vf, score, system } = setup(elementId);
   const noteStr = makeNoteStr(notes);
   system
     .addStave({
@@ -171,22 +149,11 @@ const renderBar = () => {
   vf.draw();
 }
 
-const resetAndGo = () => {
-  window.clearInterval(beatIntervalId);
-  clearBeatsDisplay();
-  beatIdx = BEATS_PER_BAR;
-  renderBeat();
-  if (!beatInterval) {
-    throw new Error('Invariant: there should always be a value at this point');
-  }
-  beatIntervalId = window.setInterval(renderBeat, beatInterval);
-};
-
-resetAndGo();
+renderBar('output');
 
 document.body.addEventListener('keypress', (e) => {
   if (e.key === ' ') {
-    resetAndGo();
+    renderBar('output');
   }
 });
 
@@ -194,17 +161,18 @@ document.getElementById('input-bpm')!.addEventListener('input', (e) => {
   const newBeatInterval = getBeatInterval(e.target as HTMLInputElement);
   if (newBeatInterval) {
     beatInterval = newBeatInterval;
-    resetAndGo();
+    renderBar('output');
   }
 });
 
 for (let i = 1; i <= 3; i++) {
   const radioButton = document.getElementById(`input-rests-${i}`) as HTMLInputElement;
-  radioButton.addEventListener('click', (e) => {
+  radioButton.addEventListener('click', (_e) => {
     restsPerBar = getRestsPerBar();
-    resetAndGo();
+    renderBar('output');
   });
 }
 
-document.getElementById('input-all-notes-equal')!.addEventListener('change', resetAndGo);
+document.getElementById('input-all-notes-equal')!
+  .addEventListener('change', () => renderBar('output'));
 
