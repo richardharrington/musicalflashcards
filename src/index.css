@@ -213,11 +213,11 @@ code {
 
 /* Stuff not created by create-react-app */
 
-#content-container {
+.content-container {
   display: flex;
   justify-content: center;
 }
-#content {
+.content {
   width: 381px;
 }
 #visual-metronome {
@@ -261,7 +261,7 @@ input {
   width: 160px;
   height: 150px;
 }
-#input-bpm {
+.input-bpm {
   width: 60px;
   margin-right: 5px;
 }

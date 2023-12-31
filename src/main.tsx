@@ -41,7 +41,7 @@ const getRestsPerBar = () => {
   }
 }
 
-let beatInterval = getBeatInterval(document.getElementById('input-bpm') as HTMLInputElement);
+let beatInterval = getBeatInterval(document.querySelector('.input-bpm') as HTMLInputElement);
 
 let restsPerBar = getRestsPerBar();
 
@@ -157,7 +157,7 @@ document.body.addEventListener('keypress', (e) => {
   }
 });
 
-document.getElementById('input-bpm')!.addEventListener('input', (e) => {
+document.querySelector('.input-bpm')!.addEventListener('input', (e) => {
   const newBeatInterval = getBeatInterval(e.target as HTMLInputElement);
   if (newBeatInterval) {
     beatInterval = newBeatInterval;
