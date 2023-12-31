@@ -1,17 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import VisualBeats from './VisualBeats';
-
-// function useBeatInterval({ serverUrl, roomId }) {
-//   useEffect(() => {
-//     const options = {
-//       serverUrl: serverUrl,
-//       roomId: roomId
-//     };
-//     const connection = createConnection(options);
-//     connection.connect();
-//     return () => connection.disconnect();
-//   }, [roomId, serverUrl]);
-// }
+import useBeatInterval from '../hooks/useBeatInterval';
 
 type Props = {
   beatsPerBar: number,
@@ -20,11 +9,11 @@ type Props = {
 
 function Metronome({ beatsPerBar, beatInterval }: Props) {
   const [currentBeat, setCurrentBeat] = useState(4);
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setCurrentBeat(currentBeat % beatsPerBar + 1);
-    }, beatInterval);
-    return () => window.clearTimeout(timeoutId);
+  useBeatInterval({
+    beatsPerBar,
+    currentBeat,
+    beatInterval,
+    setCurrentBeat,
   });
 
   return (
@@ -36,6 +25,3 @@ function Metronome({ beatsPerBar, beatInterval }: Props) {
 }
 
 export default Metronome;
-
-
-
