@@ -1,5 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import {
+  makeNoteRange,
+  makeRandomNote,
+  makeRandomNotes,
+  makeRepeatedNotes,
+  makeNoteStr,
+} from './utils/noteUtils.tsx'
+import type { Note } from './utils/noteUtils.tsx'
 import Metronome from './components/Metronome.tsx'
 import './index.css'
 
@@ -7,8 +15,6 @@ import './index.css'
 
 import { Vex } from 'vexflow';
 import type { EasyScore, System, Factory } from 'vexflow';
-
-type Note = [number, number]; // octave, position in octave
 
 const LOW_NOTE: Note = [3, 5]; // low G
 const HIGH_NOTE: Note = [5, 2]; // high D
@@ -55,55 +61,6 @@ const setup = (elementId: string): { vf: Factory, score: EasyScore, system: Syst
   return { vf, score, system };
 }
 
-const makeNoteRange = (
-  [lowOctave, lowPos]: Note,
-  [highOctave, highPos]: Note,
-) => {
-  const notes: Array<Note> = [];
-  for (let octave = lowOctave; octave <= highOctave; octave++) {
-    const startPos = octave === lowOctave ? lowPos : 1;
-    const endPos = octave === highOctave ? highPos : 7;
-    for (let pos = startPos; pos <= endPos; pos++) {
-      notes.push([octave, pos]);
-    }
-  }
-  return notes;
-}
-
-const makeRandomNote = (noteRange: Array<Note>): Note => {
-  return noteRange[Math.floor(Math.random() * noteRange.length)];
-};
-
-const makeRandomNotes = (noteRange: Array<Note>): Array<Note> => {
-  const notes: Array<Note> = [];
-  for (let i = 0; i < BEATS_PER_BAR - restsPerBar; i++) {
-    notes.push(makeRandomNote(noteRange));
-  }
-  return notes;
-}
-
-const makeRepeatedNotes = (note: Note): Array<Note> => {
-  const notes: Array<Note> = [];
-  for (let i = 0; i < BEATS_PER_BAR - restsPerBar; i++) {
-    notes.push(note);
-  }
-  return notes;
-};
-
-const makeNoteStr = (notes: Array<Note>): string => {
-  let restStr = '';
-  if (restsPerBar >= 2) {
-    restStr += 'B4/h/r, ';
-  }
-  if (restsPerBar === 1 || restsPerBar === 3) {
-    restStr += 'B4/q/r, ';
-  }
-
-  const letterAtPos = (pos: number) => 'CDEFGAB'[pos - 1];
-  const noteStr = notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
-  return restStr + noteStr;
-};
-
 const clearBar = (elementId: string) => {
   const outputElem = document.getElementById(elementId);
   if (!outputElem) {
@@ -114,17 +71,18 @@ const clearBar = (elementId: string) => {
 
 const renderBar = (elementId: string) => {
   clearBar(elementId);
+  const numNotes = BEATS_PER_BAR - restsPerBar;
   const noteRange = makeNoteRange(LOW_NOTE, HIGH_NOTE);
   let notes;
   const allNotesShouldBeEqual = (document.getElementById('input-all-notes-equal') as HTMLInputElement).checked;
   if (allNotesShouldBeEqual) {
-    notes = makeRepeatedNotes(makeRandomNote(noteRange));
+    notes = makeRepeatedNotes(makeRandomNote(noteRange), numNotes);
   } else {
-    notes = makeRandomNotes(noteRange);
+    notes = makeRandomNotes(noteRange, numNotes);
   }
 
   const { vf, score, system } = setup(elementId);
-  const noteStr = makeNoteStr(notes);
+  const noteStr = makeNoteStr(notes, BEATS_PER_BAR);
   system
     .addStave({
       voices: [
