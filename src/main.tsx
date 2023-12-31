@@ -9,6 +9,7 @@ import {
 } from './utils/noteUtils.tsx'
 import type { Note } from './utils/noteUtils.tsx'
 import Metronome from './components/Metronome.tsx'
+import Bar from './components/Bar.tsx'
 import './index.css'
 
 // Start of code from original site:
@@ -44,6 +45,11 @@ let restsPerBar = getRestsPerBar();
 // TODO: Tie this into user input for resetting things.
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
+    <Bar
+      elementId="output"
+      notes={[LOW_NOTE, HIGH_NOTE]}
+      beatsPerBar={BEATS_PER_BAR}
+    />
     <Metronome
       beatsPerBar={BEATS_PER_BAR}
       initialBpm={INITIAL_BPM}
@@ -97,11 +103,11 @@ const renderBar = (elementId: string) => {
   vf.draw();
 }
 
-renderBar('output');
+// renderBar('output');
 
 document.body.addEventListener('keypress', (e) => {
   if (e.key === ' ') {
-    renderBar('output');
+    // renderBar('output');
   }
 });
 
@@ -109,10 +115,10 @@ for (let i = 1; i <= 3; i++) {
   const radioButton = document.getElementById(`input-rests-${i}`) as HTMLInputElement;
   radioButton.addEventListener('click', (_e) => {
     restsPerBar = getRestsPerBar();
-    renderBar('output');
+    // renderBar('output');
   });
 }
 
 document.getElementById('input-all-notes-equal')!
-  .addEventListener('change', () => renderBar('output'));
+  .addEventListener('change', () => /* renderBar('output') */{});
 
