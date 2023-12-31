@@ -230,10 +230,10 @@ code {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-weight: bold;
 }
-.visual-metronome-numeral {
+#visual-metronome .visual-metronome-numeral {
   opacity: 0;
 }
-.visual-metronome-numeral.show-beat {
+#visual-metronome .visual-metronome-numeral.show-beat {
   opacity: 1
 }
 #header {

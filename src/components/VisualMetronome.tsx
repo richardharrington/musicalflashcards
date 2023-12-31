@@ -35,9 +35,9 @@ function VisualMetronome({ beatsPerBar, beatInterval }: Props) {
   }
 
   return (
-    <>
+    <div id="visual-metronome">
       {renderBeats()}
-    </>
+    </div>
   );
 }
 
