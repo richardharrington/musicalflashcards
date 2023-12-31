@@ -13,18 +13,10 @@ type Note = [number, number]; // octave, position in octave
 const LOW_NOTE: Note = [3, 5]; // low G
 const HIGH_NOTE: Note = [5, 2]; // high D
 const BEATS_PER_BAR = 4; // TODO: Figure out how to make this work with a different number of notes
+const INITIAL_BPM=100;
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
-
-// Takes beatsPerMinute and returns interval between beats in milliseconds
-const getBeatInterval = (elem: HTMLInputElement) => {
-  const beatsPerMinute = parseFloat(elem.value.trim());
-  if (!beatsPerMinute) {
-    return null;
-  }
-  return Math.floor((1000 * 60) / beatsPerMinute);
-}
 
 const getRestsPerBar = () => {
   const radio1 = document.getElementById('input-rests-1') as HTMLInputElement;
@@ -41,17 +33,15 @@ const getRestsPerBar = () => {
   }
 }
 
-let beatInterval = getBeatInterval(document.querySelector('.input-bpm') as HTMLInputElement);
-
 let restsPerBar = getRestsPerBar();
 
 // TODO: Tie this into user input for resetting things.
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {beatInterval !== null && <Metronome
+    <Metronome
       beatsPerBar={BEATS_PER_BAR}
-      beatInterval={beatInterval}
-    />}
+      initialBpm={INITIAL_BPM}
+    />
   </React.StrictMode>,
 )
 
@@ -153,14 +143,6 @@ renderBar('output');
 
 document.body.addEventListener('keypress', (e) => {
   if (e.key === ' ') {
-    renderBar('output');
-  }
-});
-
-document.querySelector('.input-bpm')!.addEventListener('input', (e) => {
-  const newBeatInterval = getBeatInterval(e.target as HTMLInputElement);
-  if (newBeatInterval) {
-    beatInterval = newBeatInterval;
     renderBar('output');
   }
 });
