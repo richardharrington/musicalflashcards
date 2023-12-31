@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import VisualMetronome from './components/VisualMetronome.tsx'
+import Metronome from './components/Metronome.tsx'
 import './index.css'
 
 // Start of code from original site:
@@ -48,10 +48,10 @@ let restsPerBar = getRestsPerBar();
 // TODO: Tie this into user input for resetting things.
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <VisualMetronome
+    {beatInterval !== null && <Metronome
       beatsPerBar={BEATS_PER_BAR}
       beatInterval={beatInterval}
-    />
+    />}
   </React.StrictMode>,
 )
 
