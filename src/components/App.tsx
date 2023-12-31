@@ -1,13 +1,24 @@
 import { useState } from 'react';
 import VisualBeats from './VisualBeats';
 import useBeatInterval from '../hooks/useBeatInterval';
+import Bar from '../components/Bar';
+import type { Note } from '../utils/noteUtils';
 
 type Props = {
-  beatsPerBar: number,
-  initialBpm: number,
+  beatsPerBar: number;
+  initialBpm: number;
+  vexFlowElementId: string;
+  lowNote: Note;
+  highNote: Note;
 };
 
-function Metronome({ beatsPerBar, initialBpm }: Props) {
+function App({
+  beatsPerBar,
+  initialBpm,
+  vexFlowElementId,
+  lowNote,
+  highNote,
+}: Props) {
   const [currentBeat, setCurrentBeat] = useState(4);
   const [bpm, setBpm] = useState(initialBpm);
 
@@ -27,6 +38,11 @@ function Metronome({ beatsPerBar, initialBpm }: Props) {
 
   return (
     <>
+      <Bar
+        elementId={vexFlowElementId}
+        notes={[lowNote, highNote]}
+        beatsPerBar={beatsPerBar}
+      />
       <VisualBeats
         beatsPerBar={beatsPerBar}
         currentBeat={currentBeat}
@@ -49,4 +65,4 @@ function Metronome({ beatsPerBar, initialBpm }: Props) {
   );
 }
 
-export default Metronome;
+export default App;

@@ -1,4 +1,3 @@
-// Bar.tsx
 import React, { useRef, useEffect } from 'react';
 import { Vex } from 'vexflow';
 import type { EasyScore, System, Factory } from 'vexflow';

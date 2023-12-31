@@ -8,7 +8,7 @@ import {
   makeNoteStr,
 } from './utils/noteUtils.tsx'
 import type { Note } from './utils/noteUtils.tsx'
-import Metronome from './components/Metronome.tsx'
+import App from './components/App.tsx'
 import Bar from './components/Bar.tsx'
 import './index.css'
 
@@ -45,14 +45,12 @@ let restsPerBar = getRestsPerBar();
 // TODO: Tie this into user input for resetting things.
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Bar
-      elementId="output"
-      notes={[LOW_NOTE, HIGH_NOTE]}
-      beatsPerBar={BEATS_PER_BAR}
-    />
-    <Metronome
+    <App
       beatsPerBar={BEATS_PER_BAR}
       initialBpm={INITIAL_BPM}
+      vexFlowElementId="output"
+      lowNote={LOW_NOTE}
+      highNote={HIGH_NOTE}
     />
   </React.StrictMode>,
 )
@@ -67,6 +65,7 @@ const setup = (elementId: string): { vf: Factory, score: EasyScore, system: Syst
   return { vf, score, system };
 }
 
+// TODO: Can we do this within the VexFlow library functions?
 const clearBar = (elementId: string) => {
   const outputElem = document.getElementById(elementId);
   if (!outputElem) {
