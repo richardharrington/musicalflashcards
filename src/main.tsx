@@ -9,7 +9,6 @@ import {
 } from './utils/noteUtils.tsx'
 import type { Note } from './utils/noteUtils.tsx'
 import App from './components/App.tsx'
-import Bar from './components/Bar.tsx'
 import './index.css'
 
 // Start of code from original site:

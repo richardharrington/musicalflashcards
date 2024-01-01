@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import VisualBeats from './VisualBeats';
 import useBeatInterval from '../hooks/useBeatInterval';
 import Bar from '../components/Bar';
 import type { Note } from '../utils/noteUtils';
+
+import { generateNotes } from '../utils/noteUtils.tsx'
 
 type Props = {
   beatsPerBar: number;
@@ -19,8 +21,27 @@ function App({
   lowNote,
   highNote,
 }: Props) {
+  // TODO: This should be beats-per-bar minus the user-inputted
+  // number of rests
+  const numNotes = 2;
+  // TODO: This should also be user-inputted
+  const allNotesShouldBeEqual = false;
+  const genNotes = () => generateNotes(numNotes, lowNote, highNote, allNotesShouldBeEqual);
+
   const [currentBeat, setCurrentBeat] = useState(4);
   const [bpm, setBpm] = useState(initialBpm);
+  const [notes, setNotes] = useState(genNotes());
+
+  const handleBpmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newBpm = parseFloat(event.target.value.trim());
+    newBpm && setBpm(newBpm);
+  }
+
+  useEffect(() => {
+    if (currentBeat === 1) {
+      setNotes(genNotes());
+    }
+  }, [currentBeat]);
 
   const beatInterval = Math.floor((1000 * 60) / bpm);
 
@@ -31,16 +52,11 @@ function App({
     setCurrentBeat,
   });
 
-  const handleBpmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newBpm = parseFloat(event.target.value.trim());
-    newBpm && setBpm(newBpm);
-  }
-
   return (
     <>
       <Bar
         elementId={vexFlowElementId}
-        notes={[lowNote, highNote]}
+        notes={notes}
         beatsPerBar={beatsPerBar}
       />
       <VisualBeats

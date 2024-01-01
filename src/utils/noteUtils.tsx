@@ -35,6 +35,18 @@ export const makeRepeatedNotes = (note: Note, numNotes: number): Array<Note> => 
   return notes;
 };
 
+export const generateNotes = (
+  numNotes: number,
+  lowNote: Note,
+  highNote: Note,
+  allNotesShouldBeEqual: boolean,
+) => {
+  const noteRange = makeNoteRange(lowNote, highNote);
+  return allNotesShouldBeEqual
+    ? makeRepeatedNotes(makeRandomNote(noteRange), numNotes)
+    : makeRandomNotes(noteRange, numNotes);
+}
+
 export const makeNoteStr = (notes: Array<Note>, beatsPerBar: number): string => {
   const restsPerBar = beatsPerBar - notes.length;
   let restStr = '';
