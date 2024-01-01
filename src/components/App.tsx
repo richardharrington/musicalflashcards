@@ -21,9 +21,8 @@ function App({
   lowNote,
   highNote,
 }: Props) {
-  // TODO: This should be beats-per-bar minus the user-inputted
-  // number of rests
-  const numNotes = 2;
+  const [numRests, setNumRests] = useState(1);
+  const numNotes = beatsPerBar - numRests;
   // TODO: This should also be user-inputted
   const allNotesShouldBeEqual = false;
   const genNotes = () => generateNotes(numNotes, lowNote, highNote, allNotesShouldBeEqual);
@@ -35,6 +34,11 @@ function App({
   const handleBpmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newBpm = parseFloat(event.target.value.trim());
     newBpm && setBpm(newBpm);
+  }
+
+  const handleNumRestsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newNumRests = parseInt(event.target.value.trim(), 10);
+    newNumRests && setNumRests(newNumRests);
   }
 
   useEffect(() => {
@@ -51,6 +55,25 @@ function App({
     beatInterval,
     setCurrentBeat,
   });
+
+  const renderRestInputs = () => {
+    const elems = [];
+    for (let i = 1; i <= 3; i++) {
+      elems.push(
+        <span className="rests-input" key={i}>
+          <input
+            type="radio"
+            name="input-rests"
+            value={i}
+            checked={numRests === i}
+            onChange={handleNumRestsChange}
+          />
+          <label>{i} rest</label>
+        </span>
+      );
+    }
+    return elems;
+  }
 
   return (
     <>
@@ -74,6 +97,9 @@ function App({
               onChange={handleBpmChange}
             />
             <label>Beats per minute</label>
+          </p>
+          <p>
+            {renderRestInputs()}
           </p>
         </div>
       </div>
