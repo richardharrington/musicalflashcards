@@ -26,7 +26,11 @@ function App({
   const [allNotesShouldBeEqual, setAllNotesShouldBeEqual] = useState(false);
   const genNotes = () => generateNotes(numNotes, lowNote, highNote, allNotesShouldBeEqual);
 
-  const [currentBeat, setCurrentBeat] = useState(4);
+  // The initial value here is overridden immediately
+  // anyway and set to 1, by the useEffect hook that listens
+  // for changes in bpm, numRests, and allNotesShouldBeEqual
+  const [currentBeat, setCurrentBeat] = useState(1);
+
   const [bpm, setBpm] = useState(initialBpm);
   const [notes, setNotes] = useState(genNotes());
 
@@ -44,6 +48,11 @@ function App({
     const newAllNotesShouldBeEqual = event.target.checked;
     setAllNotesShouldBeEqual(newAllNotesShouldBeEqual);
   }
+
+  useEffect(() => {
+    setCurrentBeat(1);
+    setNotes(genNotes());
+  }, [bpm, numRests, allNotesShouldBeEqual]);
 
   useEffect(() => {
     if (currentBeat === 1) {
