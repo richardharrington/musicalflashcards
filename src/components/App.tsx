@@ -81,6 +81,7 @@ function App({
 
   return (
     <>
+      <h1 id="header">Musical Flashcards</h1>
       <Bar
         elementId={vexFlowElementId}
         notes={notes}

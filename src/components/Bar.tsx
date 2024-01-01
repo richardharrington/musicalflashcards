@@ -46,7 +46,11 @@ function Bar({
     return () => clearElementChildren(elementId);
   }, [notes]);
 
-  return <div id={elementId}></div>;
+  return (
+    <div id="output-container">
+      <div id={elementId}></div>
+    </div>
+  );
 }
 
 export default Bar;

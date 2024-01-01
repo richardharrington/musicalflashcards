@@ -7,12 +7,11 @@ import './index.css'
 const LOW_NOTE: Note = [3, 5]; // low G
 const HIGH_NOTE: Note = [5, 2]; // high D
 const BEATS_PER_BAR = 4; // TODO: Figure out how to make this work with a different number of notes
-const INITIAL_BPM=100;
+const INITIAL_BPM = 100;
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
 
-// TODO: Tie this into user input for resetting things.
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App
