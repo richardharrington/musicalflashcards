@@ -3,6 +3,15 @@ import { Vex } from 'vexflow';
 import { makeNoteStr } from '../utils/noteUtils';
 import type { Note } from '../utils/noteUtils';
 
+const clearElementChildren = (elementId: string) => {
+  const element = document.getElementById(elementId);
+  if (element !== null) {
+    while(element.lastElementChild){
+      element.removeChild(element.lastElementChild);
+    }
+  }
+}
+
 type Props = {
   elementId: string;
   notes: Array<Note>;
@@ -34,8 +43,7 @@ function Bar({
       .addTimeSignature('4/4');
 
     vf.draw();
-    // TODO: May need to return a teardown function here that
-    // sets the innerHTML of the 'output' element to the empty string
+    return () => clearElementChildren(elementId);
   }, [notes]);
 
   return <div id={elementId}></div>;
