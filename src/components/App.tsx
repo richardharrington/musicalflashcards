@@ -114,6 +114,20 @@ function App({
             />
             <label>Make all notes in each round the same note</label>
           </p>
+          <p>
+            Coming soon:
+            <ul>
+              <li>
+                Option to have metronomic audio cues for the notes.
+              </li>
+              <li>
+                Option to annotate each note with its letter
+              </li>
+              <li>
+                Option to annotate each note with its finger number
+              </li>
+            </ul>
+          </p>
         </div>
       </div>
     </>
