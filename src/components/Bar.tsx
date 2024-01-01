@@ -1,6 +1,5 @@
-import React, { useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Vex } from 'vexflow';
-import type { EasyScore, System, Factory } from 'vexflow';
 import { makeNoteStr } from '../utils/noteUtils';
 import type { Note } from '../utils/noteUtils';
 
@@ -15,28 +14,26 @@ function Bar({
   notes,
   beatsPerBar,
 }: Props) {
-  const vfRef = useRef<Factory | null>(null);
-  const scoreRef = useRef<EasyScore | null>(null);
-  const systemRef = useRef<System | null>(null);
-
   useEffect(() => {
-    vfRef.current = new Vex.Flow.Factory({
+    // TODO: Use refs for vf, score and system so we don't
+    // have to recreate everything every time we rerender.
+    const vf = new Vex.Flow.Factory({
       renderer: { elementId, width: 500, height: 200 },
     });
-    scoreRef.current = vfRef.current.EasyScore();
-    systemRef.current = vfRef.current.System();
+    const score = vf.EasyScore();
+    const system = vf.System();
 
     const noteStr = makeNoteStr(notes, beatsPerBar);
-    systemRef.current
+    system
       .addStave({
         voices: [
-          scoreRef.current.voice(scoreRef.current.notes(noteStr, { stem: 'auto' })),
+          score.voice(score.notes(noteStr, { stem: 'auto' })),
         ],
       })
       .addClef('treble')
       .addTimeSignature('4/4');
 
-    vfRef.current.draw();
+    vf.draw();
     // TODO: May need to return a teardown function here that
     // sets the innerHTML of the 'output' element to the empty string
   }, [notes]);
