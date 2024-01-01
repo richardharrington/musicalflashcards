@@ -30,7 +30,3 @@ document.body.addEventListener('keypress', (e) => {
     // renderBar('output');
   }
 });
-
-document.getElementById('input-all-notes-equal')!
-  .addEventListener('change', () => /* renderBar('output') */{});
-

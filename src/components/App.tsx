@@ -23,8 +23,7 @@ function App({
 }: Props) {
   const [numRests, setNumRests] = useState(1);
   const numNotes = beatsPerBar - numRests;
-  // TODO: This should also be user-inputted
-  const allNotesShouldBeEqual = false;
+  const [allNotesShouldBeEqual, setAllNotesShouldBeEqual] = useState(false);
   const genNotes = () => generateNotes(numNotes, lowNote, highNote, allNotesShouldBeEqual);
 
   const [currentBeat, setCurrentBeat] = useState(4);
@@ -39,6 +38,11 @@ function App({
   const handleNumRestsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newNumRests = parseInt(event.target.value.trim(), 10);
     newNumRests && setNumRests(newNumRests);
+  }
+
+  const handleAllNotesShouldBeEqualChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newAllNotesShouldBeEqual = event.target.checked;
+    setAllNotesShouldBeEqual(newAllNotesShouldBeEqual);
   }
 
   useEffect(() => {
@@ -100,6 +104,15 @@ function App({
           </p>
           <p>
             {renderRestInputs()}
+          </p>
+          <p>
+            <input
+              type="checkbox"
+              name="input-all-notes-equal"
+              checked={allNotesShouldBeEqual}
+              onChange={handleAllNotesShouldBeEqualChange}
+            />
+            <label>Make all notes in each round the same note</label>
           </p>
         </div>
       </div>
