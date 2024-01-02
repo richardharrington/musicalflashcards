@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Stuff left over from vite and CRA starter apps */
 
 a {
