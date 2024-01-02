@@ -5,7 +5,7 @@ type Props = {
   currentBeat: number,
 };
 
-function VisualBeats({ beatsPerBar, currentBeat }: Props) {
+function VisualMetronome({ beatsPerBar, currentBeat }: Props) {
   const elems = [];
   for (let i = 1; i <= beatsPerBar; i++) {
     const className = cx({
@@ -25,4 +25,4 @@ function VisualBeats({ beatsPerBar, currentBeat }: Props) {
   );
 }
 
-export default VisualBeats;
+export default VisualMetronome;

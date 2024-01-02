@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import VisualBeats from './VisualBeats';
+import VisualMetronome from './VisualMetronome';
 import useBeatInterval from '../hooks/useBeatInterval';
 import Bar from '../components/Bar';
 import type { Note } from '../utils/noteUtils';
@@ -96,7 +96,7 @@ function App({
         notes={notes}
         beatsPerBar={beatsPerBar}
       />
-      <VisualBeats
+      <VisualMetronome
         beatsPerBar={beatsPerBar}
         currentBeat={currentBeat}
       />
