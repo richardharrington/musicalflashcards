@@ -31,16 +31,17 @@ function App({
   // for changes in bpm, numRests, and allNotesShouldBeEqual
   const [currentBeat, setCurrentBeat] = useState(1);
 
-  const [bpm, setBpm] = useState(initialBpm);
+  const [bpmInput, setBpmInput] = useState(initialBpm.toString());
+  const bpm = parseFloat(bpmInput);
   const [notes, setNotes] = useState(genNotes());
 
   const handleBpmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newBpm = parseFloat(event.target.value.trim());
-    newBpm && setBpm(newBpm);
+    const newBpmInput = event.target.value;
+    newBpmInput && setBpmInput(newBpmInput);
   }
 
   const handleNumRestsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newNumRests = parseInt(event.target.value.trim(), 10);
+    const newNumRests = parseInt(event.target.value, 10);
     newNumRests && setNumRests(newNumRests);
   }
 
