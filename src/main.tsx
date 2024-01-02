@@ -23,9 +23,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     />
   </React.StrictMode>,
 )
-
-document.body.addEventListener('keypress', (e) => {
-  if (e.key === ' ') {
-    // renderBar('output');
-  }
-});
