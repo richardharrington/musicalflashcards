@@ -5,7 +5,7 @@ import App from './components/App.tsx'
 import './index.css'
 
 const LOW_NOTE: Note = [3, 5]; // low G
-const HIGH_NOTE: Note = [5, 2]; // high D
+const HIGH_NOTE: Note = [5, 1]; // high C
 const BEATS_PER_BAR = 4; // TODO: Figure out how to make this work with a different number of notes
 const INITIAL_BPM = 100;
 
