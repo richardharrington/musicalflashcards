@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import VisualMetronome from './VisualMetronome';
 import useBeatInterval from '../hooks/useBeatInterval';
 import Bar from '../components/Bar';
-import type { Note } from '../utils/noteUtils';
+import type { NoteBoundaryPair } from '../utils/noteUtils';
 
 import { generateNotes } from '../utils/noteUtils.tsx'
 
@@ -10,21 +10,25 @@ type Props = {
   beatsPerBar: number;
   initialBpm: number;
   vexFlowElementId: string;
-  lowNote: Note;
-  highNote: Note;
+  noteBoundaryPairs: Record<string, NoteBoundaryPair>;
 };
 
 function App({
   beatsPerBar,
   initialBpm,
   vexFlowElementId,
-  lowNote,
-  highNote,
+  noteBoundaryPairs,
 }: Props) {
+  const [noteBoundaryPairName, setNoteBoundaryPair] = useState(
+    'lowGToHighC'
+  );
+  const { low, high } = noteBoundaryPairs[noteBoundaryPairName];
+
   const [numRests, setNumRests] = useState(1);
   const numNotes = beatsPerBar - numRests;
+
   const [allNotesShouldBeEqual, setAllNotesShouldBeEqual] = useState(false);
-  const genNotes = () => generateNotes(numNotes, lowNote, highNote, allNotesShouldBeEqual);
+  const genNotes = () => generateNotes(numNotes, low, high, allNotesShouldBeEqual);
 
   // The initial value here is overridden immediately
   // anyway and set to 1, by the useEffect hook that listens
