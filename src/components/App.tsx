@@ -78,7 +78,7 @@ function App({
     const elems = [];
     for (let i = 1; i <= 3; i++) {
       elems.push(
-        <span className="rests-input" key={i}>
+        <span className="radio-input-row" key={i}>
           <input
             type="radio"
             name="input-rests"
