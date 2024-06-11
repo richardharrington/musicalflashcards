@@ -1,8 +1,14 @@
-export type Note = [number, number]; // octave, position in octave
+export type Note = [octave: number, pos: number]; // octave, position in octave
 
-export const makeNoteRange = (
-  [lowOctave, lowPos]: Note,
-  [highOctave, highPos]: Note,
+export type NoteBoundaryPair = {
+  low: Note;
+  high: Note;
+};
+
+export const makeNoteRange = ({
+  low: [lowOctave, lowPos],
+  high: [highOctave, highPos],
+}: NoteBoundaryPair
 ) => {
   const notes: Array<Note> = [];
   for (let octave = lowOctave; octave <= highOctave; octave++) {
@@ -37,11 +43,11 @@ export const makeRepeatedNotes = (note: Note, numNotes: number): Array<Note> => 
 
 export const generateNotes = (
   numNotes: number,
-  lowNote: Note,
-  highNote: Note,
+  low: Note,
+  high: Note,
   allNotesShouldBeEqual: boolean,
 ) => {
-  const noteRange = makeNoteRange(lowNote, highNote);
+  const noteRange = makeNoteRange({ low, high });
   return allNotesShouldBeEqual
     ? makeRepeatedNotes(makeRandomNote(noteRange), numNotes)
     : makeRandomNotes(noteRange, numNotes);
