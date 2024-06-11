@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import VisualMetronome from './VisualMetronome';
 import useBeatInterval from '../hooks/useBeatInterval';
 import Bar from '../components/Bar';
+import { generateNotes, getNoteBoundaryDisplayString } from '../utils/noteUtils.tsx'
 import type { NoteBoundaryPair } from '../utils/noteUtils';
-
-import { generateNotes } from '../utils/noteUtils.tsx'
 
 type Props = {
   beatsPerBar: number;
@@ -49,6 +48,10 @@ function App({
     newNumRests && setNumRests(newNumRests);
   }
 
+  const handleBoundaryPairChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNoteBoundaryPair(event.target.value);
+  }
+
   const handleAllNotesShouldBeEqualChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newAllNotesShouldBeEqual = event.target.checked;
     setAllNotesShouldBeEqual(newAllNotesShouldBeEqual);
@@ -73,6 +76,25 @@ function App({
     beatInterval,
     setCurrentBeat,
   });
+
+  const renderNoteBoundaryInputs = () => {
+    const elems = [];
+    for (const name of Object.keys(noteBoundaryPairs)) {
+      elems.push(
+        <p key={name} className="radio-input-column">
+          <input
+            type="radio"
+            name="input-note-boundary-pairs"
+            value={name}
+            checked={noteBoundaryPairName === name}
+            onChange={handleBoundaryPairChange}
+          />
+          <label>{getNoteBoundaryDisplayString(name)}</label>
+        </p>
+      )
+    }
+    return elems;
+  }
 
   const renderRestInputs = () => {
     const elems = [];
@@ -119,6 +141,9 @@ function App({
           </p>
           <p>
             {renderRestInputs()}
+          </p>
+          <p>
+            {renderNoteBoundaryInputs()}
           </p>
           <p>
             <input

@@ -5,6 +5,16 @@ export type NoteBoundaryPair = {
   high: Note;
 };
 
+export const getNoteBoundaryDisplayString = (str: String) => {
+  const words = str.match(/[A-Z]?[a-z]*/g);
+  if (words === null) {
+    throw new Error('Not gonna happen');
+  }
+  // Capitalize first word
+  words[0] = words[0][0].toUpperCase() + words[0].slice(1);
+  return words.join(' ');
+};
+
 export const makeNoteRange = ({
   low: [lowOctave, lowPos],
   high: [highOctave, highPos],
