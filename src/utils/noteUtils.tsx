@@ -1,4 +1,26 @@
-export type Note = [octave: number, pos: number]; // octave, position in octave
+type ValueOf<T> = T[keyof T];
+
+type Octave = 3 | 4 | 5 | 6;
+
+export const PITCH_CLASS = {
+  C: 1,
+  D: 2,
+  E: 3,
+  F: 4,
+  G: 5,
+  A: 6,
+  B: 7,
+} as const;
+
+const PITCH_CLASS_LETTERS = Object.keys(PITCH_CLASS); // relies on this being ordered
+
+type PitchClassLetter = keyof typeof PITCH_CLASS;
+type PitchClass = ValueOf<typeof PITCH_CLASS>;
+
+const getLetterForPitchClass = (pitchClass: PitchClass): PitchClassLetter =>
+  PITCH_CLASS_LETTERS[pitchClass - 1] as PitchClassLetter;
+
+export type Note = [octave: Octave, pitchClass: PitchClass]; // octave, position in octave
 
 export type NoteBoundaryPair = {
   low: Note;
@@ -16,16 +38,16 @@ export const getNoteBoundaryDisplayString = (str: String) => {
 };
 
 export const makeNoteRange = ({
-  low: [lowOctave, lowPos],
-  high: [highOctave, highPos],
+  low: [lowOctave, lowPitchClass],
+  high: [highOctave, highPitchClass],
 }: NoteBoundaryPair
 ) => {
   const notes: Array<Note> = [];
   for (let octave = lowOctave; octave <= highOctave; octave++) {
-    const startPos = octave === lowOctave ? lowPos : 1;
-    const endPos = octave === highOctave ? highPos : 7;
-    for (let pos = startPos; pos <= endPos; pos++) {
-      notes.push([octave, pos]);
+    const startPitchClass = octave === lowOctave ? lowPitchClass : 1;
+    const endPitchClass = octave === highOctave ? highPitchClass : 7;
+    for (let pitchClass = startPitchClass; pitchClass <= endPitchClass; pitchClass++) {
+      notes.push([octave, pitchClass]);
     }
   }
   return notes;
@@ -73,7 +95,7 @@ export const makeNoteStr = (notes: Array<Note>, beatsPerBar: number): string => 
     restStr += 'B4/q/r, ';
   }
 
-  const letterAtPos = (pos: number) => 'CDEFGAB'[pos - 1];
-  const noteStr = notes.map(([octave, pos]) => `${letterAtPos(pos)}${octave}/q`).join(', ');
+  const noteStr = notes.map(([octave, pitchClass]) =>
+    `${getLetterForPitchClass(pitchClass)}${octave}/q`).join(', ');
   return restStr + noteStr;
 };

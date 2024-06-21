@@ -1,29 +1,34 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import type { NoteBoundaryPair } from './utils/noteUtils.tsx'
+import type {
+  NoteBoundaryPair,
+} from './utils/noteUtils.tsx'
+import {
+  PITCH_CLASS,
+} from './utils/noteUtils.tsx'
 import App from './components/App.tsx'
 import './index.css'
 
 const NOTE_BOUNDARY_PAIRS: Record<string, NoteBoundaryPair> = {
   lowGToHighC: {
-    low: [3, 5],
-    high: [5, 1],
+    low: [3, PITCH_CLASS.G],
+    high: [5, PITCH_CLASS.C],
   },
   gStringOctave: {
-    low: [3, 5],
-    high: [4, 5],
+    low: [3, PITCH_CLASS.G],
+    high: [5, PITCH_CLASS.C],
   },
   cStringOctave: {
-    low: [4, 1],
-    high: [5, 1],
+    low: [4, PITCH_CLASS.C],
+    high: [5, PITCH_CLASS.F],
   },
   eStringOctave: {
-    low: [4, 3],
-    high: [5, 3],
+    low: [4, PITCH_CLASS.E],
+    high: [5, PITCH_CLASS.A],
   },
   aStringOctave: {
-    low: [4, 6],
-    high: [5, 6],
+    low: [4, PITCH_CLASS.A],
+    high: [6, PITCH_CLASS.D],
   },
 };
 
