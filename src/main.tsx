@@ -16,19 +16,19 @@ const NOTE_BOUNDARY_PAIRS: Record<string, NoteBoundaryPair> = {
   },
   gStringOctave: {
     low: [3, PITCH_CLASS.G],
-    high: [5, PITCH_CLASS.C],
+    high: [4, PITCH_CLASS.G],
   },
   cStringOctave: {
     low: [4, PITCH_CLASS.C],
-    high: [5, PITCH_CLASS.F],
+    high: [5, PITCH_CLASS.C],
   },
   eStringOctave: {
     low: [4, PITCH_CLASS.E],
-    high: [5, PITCH_CLASS.A],
+    high: [5, PITCH_CLASS.E],
   },
   aStringOctave: {
     low: [4, PITCH_CLASS.A],
-    high: [6, PITCH_CLASS.D],
+    high: [5, PITCH_CLASS.A],
   },
 };
 
