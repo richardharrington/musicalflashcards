@@ -33,7 +33,8 @@ const NOTE_BOUNDARY_PAIRS: Record<string, NoteBoundaryPair> = {
 };
 
 const BEATS_PER_BAR = 4; // TODO: Figure out how to make this work with a different number of notes
-const INITIAL_BPM = 100;
+const INITIAL_BPM = 60;
+const INITIAL_RESTS = 3;
 
 // const SHOW_LETTERS = true; // not used yet
 // const SHOW_FINGER_POSITIONS = true; // not used yet
@@ -43,6 +44,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App
       beatsPerBar={BEATS_PER_BAR}
       initialBpm={INITIAL_BPM}
+      initialRests={INITIAL_RESTS}
       vexFlowElementId="output"
       noteBoundaryPairs={NOTE_BOUNDARY_PAIRS}
     />

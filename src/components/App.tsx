@@ -8,6 +8,7 @@ import type { NoteBoundaryPair } from '../utils/noteUtils';
 type Props = {
   beatsPerBar: number;
   initialBpm: number;
+  initialRests: number;
   vexFlowElementId: string;
   noteBoundaryPairs: Record<string, NoteBoundaryPair>;
 };
@@ -15,6 +16,7 @@ type Props = {
 function App({
   beatsPerBar,
   initialBpm,
+  initialRests,
   vexFlowElementId,
   noteBoundaryPairs,
 }: Props) {
@@ -23,7 +25,7 @@ function App({
   );
   const { low, high } = noteBoundaryPairs[noteBoundaryPairName];
 
-  const [numRests, setNumRests] = useState(1);
+  const [numRests, setNumRests] = useState(initialRests);
   const numNotes = beatsPerBar - numRests;
 
   const [allNotesShouldBeEqual, setAllNotesShouldBeEqual] = useState(false);
