@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import VisualMetronome from './VisualMetronome';
 import useBeatInterval from '../hooks/useBeatInterval';
 import Bar from '../components/Bar';
@@ -39,10 +39,20 @@ function App({
   const [bpmInput, setBpmInput] = useState(initialBpm.toString());
   const bpm = parseFloat(bpmInput);
   const [notes, setNotes] = useState(genNotes());
+  const bpmInputRef = useRef<HTMLInputElement>(null);
 
   const handleBpmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newBpmInput = event.target.value;
     newBpmInput && setBpmInput(newBpmInput);
+  }
+
+  const focusBpmInputAndMoveCursorToEnd = () => {
+    const input = bpmInputRef.current;
+    if (input) {
+      input.focus();
+      const len = input.value.length;
+      input.setSelectionRange(len, len);
+    }
   }
 
   const handleNumRestsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,15 +141,30 @@ function App({
       />
       <div className="content-container">
         <div className="content">
-          <p>
-            <input
-              type="text"
-              className="input-bpm"
-              name="input-bpm"
-              value={bpm}
-              onChange={handleBpmChange}
-            />
-            <label>Beats per minute</label>
+          <p className="bpm-row">
+            <span className="bpm-input-wrapper">
+              <input
+                ref={bpmInputRef}
+                type="text"
+                className="input-bpm"
+                name="input-bpm"
+                id="input-bpm"
+                value={bpm}
+                onChange={handleBpmChange}
+              />
+              <span
+                className="bpm-input-overlay"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  focusBpmInputAndMoveCursorToEnd();
+                }}
+                onMouseDown={(e) => e.preventDefault()}
+                role="presentation"
+                aria-hidden
+              />
+            </span>
+            <label htmlFor="input-bpm">Beats per minute</label>
           </p>
           <p>
             {renderRestInputs()}

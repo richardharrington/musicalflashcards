@@ -141,6 +141,44 @@ input {
   height: 150px;
 }
 
+.bpm-row {
+  cursor: text;
+}
+
+.bpm-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+  margin-right: 5px;
+  padding: 2px 4px;
+  border: 1px solid #888;
+  border-radius: 2px;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.bpm-input-wrapper .input-bpm {
+  position: relative;
+  z-index: 1;
+  width: 60px;
+  margin-right: 0;
+  border: none;
+  padding: 0;
+  outline: none;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.bpm-input-overlay {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  z-index: 2;
+  cursor: text;
+}
+
 .input-bpm {
   width: 60px;
   margin-right: 5px;
