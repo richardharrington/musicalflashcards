@@ -37,13 +37,12 @@ function App({
   const [currentBeat, setCurrentBeat] = useState(1);
 
   const [bpmInput, setBpmInput] = useState(initialBpm.toString());
-  const bpm = parseFloat(bpmInput);
+  const bpm = bpmInput === '' ? 0 : parseFloat(bpmInput);
   const [notes, setNotes] = useState(genNotes());
   const bpmInputRef = useRef<HTMLInputElement>(null);
 
   const handleBpmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newBpmInput = event.target.value;
-    newBpmInput && setBpmInput(newBpmInput);
+    setBpmInput(event.target.value);
   }
 
   const focusBpmInputAndMoveCursorToEnd = () => {
@@ -80,7 +79,8 @@ function App({
     }
   }, [currentBeat]);
 
-  const beatInterval = Math.floor((1000 * 60) / bpm);
+  const beatInterval =
+    bpm > 0 && Number.isFinite(bpm) ? Math.floor((1000 * 60) / bpm) : 0;
 
   useBeatInterval({
     beatsPerBar,
@@ -149,7 +149,7 @@ function App({
                 className="input-bpm"
                 name="input-bpm"
                 id="input-bpm"
-                value={bpm}
+                value={bpmInput}
                 onChange={handleBpmChange}
               />
               <span
