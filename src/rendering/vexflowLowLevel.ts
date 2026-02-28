@@ -52,7 +52,10 @@ export const drawMeasure = ({
   // Reasonable default; can be made configurable later.
   voice.setStrict(false);
 
-  new Formatter().joinVoices([voice]).format([voice], stave.getWidth() - 20);
+  // getNoteStartX() is the x-position after clef, key, and time signature.
+  // The available width for notes is from there to the right edge of the stave.
+  const noteAreaWidth = stave.getX() + stave.getWidth() - stave.getNoteStartX();
+  new Formatter().joinVoices([voice]).format([voice], noteAreaWidth);
   voice.draw(context, stave);
 };
 
