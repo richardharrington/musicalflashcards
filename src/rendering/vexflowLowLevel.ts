@@ -53,8 +53,9 @@ export const drawMeasure = ({
   voice.setStrict(false);
 
   // getNoteStartX() is the x-position after clef, key, and time signature.
-  // The available width for notes is from there to the right edge of the stave.
-  const noteAreaWidth = stave.getX() + stave.getWidth() - stave.getNoteStartX();
+  // Subtract a right-side padding so the last note isn't flush with the stave edge.
+  const RIGHT_PADDING = 15;
+  const noteAreaWidth = stave.getX() + stave.getWidth() - stave.getNoteStartX() - RIGHT_PADDING;
   new Formatter().joinVoices([voice]).format([voice], noteAreaWidth);
   voice.draw(context, stave);
 };
