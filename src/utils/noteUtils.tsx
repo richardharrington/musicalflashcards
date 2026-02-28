@@ -12,13 +12,7 @@ export const PITCH_CLASS = {
   B: 7,
 } as const;
 
-const PITCH_CLASS_LETTERS = Object.keys(PITCH_CLASS); // relies on this being ordered
-
-type PitchClassLetter = keyof typeof PITCH_CLASS;
 type PitchClass = ValueOf<typeof PITCH_CLASS>;
-
-const getLetterForPitchClass = (pitchClass: PitchClass): PitchClassLetter =>
-  PITCH_CLASS_LETTERS[pitchClass - 1] as PitchClassLetter;
 
 export type Note = [octave: Octave, pitchClass: PitchClass]; // octave, position in octave
 
@@ -84,18 +78,3 @@ export const generateNotes = (
     ? makeRepeatedNotes(makeRandomNote(noteRange), numNotes)
     : makeRandomNotes(noteRange, numNotes);
 }
-
-export const makeNoteStr = (notes: Array<Note>, beatsPerBar: number): string => {
-  const restsPerBar = beatsPerBar - notes.length;
-  let restStr = '';
-  if (restsPerBar >= 2) {
-    restStr += 'B4/h/r, ';
-  }
-  if (restsPerBar === 1 || restsPerBar === 3) {
-    restStr += 'B4/q/r, ';
-  }
-
-  const noteStr = notes.map(([octave, pitchClass]) =>
-    `${getLetterForPitchClass(pitchClass)}${octave}/q`).join(', ');
-  return restStr + noteStr;
-};
