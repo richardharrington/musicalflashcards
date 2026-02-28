@@ -40,7 +40,7 @@ function Bar({
       renderer.resize(500, 200);
 
       const context = renderer.getContext();
-      const stave = new Stave(10, 0, 190);
+      const stave = new Stave(0, 0, 160);
       stave.addClef('treble').addTimeSignature('4/4');
       stave.setContext(context).draw();
 
