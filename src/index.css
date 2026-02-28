@@ -157,6 +157,11 @@ input {
   vertical-align: middle;
 }
 
+.bpm-input-wrapper:focus-within {
+  border-color: #7dd3fc;
+  box-shadow: 0 0 0 2px #7dd3fc, 0 0 12px rgba(125, 211, 252, 0.5);
+}
+
 .bpm-input-wrapper .input-bpm {
   position: relative;
   z-index: 1;
