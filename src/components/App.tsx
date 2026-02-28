@@ -134,6 +134,7 @@ function App({
         elementId={vexFlowElementId}
         notes={notes}
         beatsPerBar={beatsPerBar}
+        renderMode="lowLevel"
       />
       <VisualMetronome
         beatsPerBar={beatsPerBar}
