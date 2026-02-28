@@ -20,6 +20,7 @@ function App({
   vexFlowElementId,
   noteBoundaryPairs,
 }: Props) {
+  const [renderMode, setRenderMode] = useState<'easyScore' | 'lowLevel'>('lowLevel');
   const [noteBoundaryPairName, setNoteBoundaryPair] = useState(
     'lowGToHighC'
   );
@@ -66,6 +67,10 @@ function App({
   const handleAllNotesShouldBeEqualChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newAllNotesShouldBeEqual = event.target.checked;
     setAllNotesShouldBeEqual(newAllNotesShouldBeEqual);
+  }
+
+  const handleRenderModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRenderMode(event.target.value as 'easyScore' | 'lowLevel');
   }
 
   useEffect(() => {
@@ -134,7 +139,7 @@ function App({
         elementId={vexFlowElementId}
         notes={notes}
         beatsPerBar={beatsPerBar}
-        renderMode="lowLevel"
+        renderMode={renderMode}
       />
       <VisualMetronome
         beatsPerBar={beatsPerBar}
@@ -169,6 +174,28 @@ function App({
           </p>
           <p>
             {renderRestInputs()}
+          </p>
+          <p>
+            <span className="radio-input-row">
+              <input
+                type="radio"
+                name="input-render-mode"
+                value="easyScore"
+                checked={renderMode === 'easyScore'}
+                onChange={handleRenderModeChange}
+              />
+              <label>EasyScore</label>
+            </span>
+            <span className="radio-input-row">
+              <input
+                type="radio"
+                name="input-render-mode"
+                value="lowLevel"
+                checked={renderMode === 'lowLevel'}
+                onChange={handleRenderModeChange}
+              />
+              <label>Low-level</label>
+            </span>
           </p>
           <p>
             {renderNoteBoundaryInputs()}
