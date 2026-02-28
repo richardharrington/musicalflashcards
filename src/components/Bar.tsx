@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Vex } from 'vexflow';
 import type { Note } from '../utils/noteUtils';
-import { buildFullMeasure, drawMeasure } from '../rendering/vexflowLowLevel';
+import { buildFullMeasure } from '../rendering/buildMeasure';
+import { drawMeasure } from '../rendering/drawMeasure';
 
 const clearElementChildren = (elementId: string) => {
   const element = document.getElementById(elementId);
