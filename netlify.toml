@@ -1,0 +1,3 @@
+[build]
+  command = "npm run build -w @musicalflashcards/web"
+  publish = "packages/web/dist"
