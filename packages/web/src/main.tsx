@@ -1,11 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import type {
-  NoteBoundaryPair,
-} from './utils/noteUtils.tsx'
-import {
-  PITCH_CLASS,
-} from './utils/noteUtils.tsx'
+import type { NoteBoundaryPair } from '@musicalflashcards/shared'
+import { PITCH_CLASS } from '@musicalflashcards/shared'
 import App from './components/App.tsx'
 import './index.css'
 

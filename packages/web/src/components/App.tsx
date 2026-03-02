@@ -1,9 +1,8 @@
 import { useRef } from 'react';
 import VisualMetronome from './VisualMetronome';
-import Bar from '../components/Bar';
-import { getNoteBoundaryDisplayString } from '../utils/noteUtils';
-import type { NoteBoundaryPair } from '../utils/noteUtils';
-import useAppState from '../hooks/useAppState';
+import Bar from './Bar';
+import { getNoteBoundaryDisplayString, useAppState } from '@musicalflashcards/shared';
+import type { NoteBoundaryPair } from '@musicalflashcards/shared';
 
 type Props = {
   beatsPerBar: number;

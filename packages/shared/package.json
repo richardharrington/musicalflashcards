@@ -1,0 +1,11 @@
+{
+  "name": "@musicalflashcards/shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "react": ">=18",
+    "vexflow": "~4.2.3"
+  }
+}

@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 import { Vex } from 'vexflow';
-import type { Note } from '../utils/noteUtils';
-import { buildFullMeasure } from '../rendering/buildMeasure';
-import { drawMeasure } from '../rendering/drawMeasure';
+import type { Note } from '@musicalflashcards/shared';
+import { buildFullMeasure, drawMeasure } from '@musicalflashcards/shared';
 
 const clearElementChildren = (elementId: string) => {
   const element = document.getElementById(elementId);
