@@ -32,7 +32,11 @@ export default function Bar({ notes, beatsPerBar }: Props) {
       const container = createFakeContainer();
       const { Renderer, Stave } = Vex.Flow;
 
-      const renderer = new Renderer(container as any, Renderer.Backends.SVG);
+      // VexFlow's .d.ts types declare that Renderer expects a full HTMLDivElement,
+      // an interface with hundreds of fields and methods, but Renderer actually
+      // only uses a few of them (appendChild, setAttribute, etc.). Our FakeSVGElement
+      // implements that subset. The `as unknown as X` cast bypasses the type mismatch.
+      const renderer = new Renderer(container as unknown as HTMLDivElement, Renderer.Backends.SVG);
       renderer.resize(SVG_WIDTH, SVG_HEIGHT);
 
       const context = renderer.getContext();
@@ -43,7 +47,7 @@ export default function Bar({ notes, beatsPerBar }: Props) {
       const tickables = buildFullMeasure(notes, beatsPerBar);
       drawMeasure({ context, stave, tickables, beatsPerBar });
 
-      return toSVGString(container as any);
+      return toSVGString(container);
     } finally {
       teardownFakeDocument();
     }
