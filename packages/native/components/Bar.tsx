@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { Vex } from 'vexflow';
 import type { Note } from '@musicalflashcards/shared';
@@ -11,14 +12,20 @@ import {
   toSVGString,
 } from '@musicalflashcards/shared';
 
+const SVG_WIDTH = 320;
+const SVG_HEIGHT = 130;
+const STAVE_WIDTH = 230;
+const STAVE_X = 45;
+
 type Props = {
   notes: Array<Note>;
   beatsPerBar: number;
-  width?: number;
-  height?: number;
 };
 
-export default function Bar({ notes, beatsPerBar, width = 500, height = 200 }: Props) {
+export default function Bar({ notes, beatsPerBar }: Props) {
+  const { width: screenWidth } = useWindowDimensions();
+  const displayWidth = screenWidth - 40;
+
   const svgString = useMemo(() => {
     setupFakeDocument();
     try {
@@ -26,10 +33,10 @@ export default function Bar({ notes, beatsPerBar, width = 500, height = 200 }: P
       const { Renderer, Stave } = Vex.Flow;
 
       const renderer = new Renderer(container as any, Renderer.Backends.SVG);
-      renderer.resize(width, height);
+      renderer.resize(SVG_WIDTH, SVG_HEIGHT);
 
       const context = renderer.getContext();
-      const stave = new Stave(0, 0, 160);
+      const stave = new Stave(STAVE_X, 10, STAVE_WIDTH);
       stave.addClef('treble').addTimeSignature('4/4');
       stave.setContext(context).draw();
 
@@ -40,9 +47,10 @@ export default function Bar({ notes, beatsPerBar, width = 500, height = 200 }: P
     } finally {
       teardownFakeDocument();
     }
-  }, [notes, beatsPerBar, width, height]);
+  }, [notes, beatsPerBar]);
 
   if (!svgString) return null;
   const cleanedSvg = svgString.replace(/ pointer-events="[^"]*"/g, '');
-  return <SvgXml xml={cleanedSvg} width={width} height={height} />;
+  const displayHeight = (displayWidth / SVG_WIDTH) * SVG_HEIGHT;
+  return <SvgXml xml={cleanedSvg} width={displayWidth} height={displayHeight} />;
 }
