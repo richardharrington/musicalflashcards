@@ -115,6 +115,11 @@ export default function App() {
           />
           <Text style={styles.switchLabel}>Make all notes in each round the same note</Text>
         </View>
+
+        <Text style={styles.sectionLabel}>Coming soon:</Text>
+        <Text style={styles.comingSoonItem}>- Option to have metronomic audio cues for the notes</Text>
+        <Text style={styles.comingSoonItem}>- Option to annotate each note with its letter</Text>
+        <Text style={styles.comingSoonItem}>- Option to annotate each note with its finger number</Text>
       </View>
 
       <StatusBar style="auto" />
@@ -234,5 +239,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 10,
     flex: 1,
+  },
+  comingSoonItem: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+    paddingLeft: 8,
   },
 });
