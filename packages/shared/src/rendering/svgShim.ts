@@ -88,12 +88,44 @@ export function createFakeContainer(): FakeSVGElement {
  * can call document.createElementNS. Call teardownFakeDocument()
  * when done rendering.
  */
+// We intentionally use `as any` when reading/writing both `globalThis` and
+// `globalThis.document` below. This shim runs in non-DOM environments
+// (e.g. React Native), installs a fake document object (not a real
+// `Document`), and may delete the property on teardown. Those operations
+// don't fit standard DOM typings, so we opt into explicit escape hatches.
+let fakeDocumentSetupDepth = 0;
+let hadOriginalDocument = false;
+let originalDocumentValue: any;
+
 export function setupFakeDocument(): void {
-  (globalThis as any).document = createFakeDocument();
+  if (fakeDocumentSetupDepth === 0) {
+    hadOriginalDocument = Object.prototype.hasOwnProperty.call(globalThis, 'document');
+    originalDocumentValue = (globalThis as any).document;
+    (globalThis as any).document = createFakeDocument();
+  }
+  fakeDocumentSetupDepth += 1;
 }
 
 export function teardownFakeDocument(): void {
-  delete (globalThis as any).document;
+  if (fakeDocumentSetupDepth === 0) {
+    return;
+  }
+
+  if (fakeDocumentSetupDepth > 1) {
+    fakeDocumentSetupDepth -= 1;
+    return;
+  }
+
+  // fakeDocumentSetupDepth === 1: this is the final matching teardown.
+  if (hadOriginalDocument) {
+    (globalThis as any).document = originalDocumentValue;
+  } else {
+    delete (globalThis as any).document;
+  }
+
+  fakeDocumentSetupDepth = 0;
+  hadOriginalDocument = false;
+  originalDocumentValue = undefined;
 }
 
 function serializeElement(el: FakeSVGElement): string {
