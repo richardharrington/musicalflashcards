@@ -1,10 +1,17 @@
 import { FRAME_SIZE } from '@musicalflashcards/shared';
+import type { MicFrameCallback } from '@musicalflashcards/shared';
 
-export type MicFrameCallback = (
-  frame: Float32Array,
-  sampleRate: number,
-  atMs: number,
-) => void;
+export const micErrorToMessage = (err: unknown): string => {
+  if (err instanceof DOMException) {
+    if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
+      return 'Microphone access denied';
+    }
+    if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError') {
+      return 'No microphone found';
+    }
+  }
+  return 'Microphone unavailable';
+};
 
 // The only platform-specific audio code: getUserMedia → AnalyserNode →
 // Float32Array frames polled on a rAF loop. The same Float32Array is reused

@@ -1,22 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import cx from 'classnames';
 import VisualMetronome from './VisualMetronome';
 import Bar from './Bar';
 import LiveReadout from './LiveReadout';
-import usePitchPipeline from '../hooks/usePitchPipeline.ts';
-import type { PipelineFrame } from '../hooks/usePitchPipeline.ts';
+import { createMicSource, micErrorToMessage } from '../audio/micSource.ts';
 import {
   getNoteBoundaryDisplayString,
-  useAppState,
-  createPracticeJudge,
-  createTempoJudge,
-  noteToMidi,
+  useJudgedAppState,
 } from '@musicalflashcards/shared';
-import type {
-  NoteBoundaryPair,
-  PracticeSnapshot,
-  TempoSnapshot,
-} from '@musicalflashcards/shared';
+import type { Mode, NoteBoundaryPair } from '@musicalflashcards/shared';
 
 type Props = {
   beatsPerBar: number;
@@ -26,11 +18,6 @@ type Props = {
   noteBoundaryPairs: Record<string, NoteBoundaryPair>;
 };
 
-type Mode = 'practice' | 'tempo';
-
-// let the player see the last note turn green before the bar regenerates
-const BAR_COMPLETE_DELAY_MS = 600;
-
 function App({
   beatsPerBar,
   initialBpm,
@@ -38,37 +25,18 @@ function App({
   vexFlowElementId,
   noteBoundaryPairs,
 }: Props) {
-  const [mode, setMode] = useState<Mode>('tempo');
-
-  const practiceJudgeRef = useRef<ReturnType<typeof createPracticeJudge> | null>(null);
-  const tempoJudgeRef = useRef<ReturnType<typeof createTempoJudge> | null>(null);
-  const [practice, setPractice] = useState<PracticeSnapshot | null>(null);
-  const [tempo, setTempo] = useState<TempoSnapshot | null>(null);
-
-  // judges consume frames directly (60 Hz); React state only changes when a
-  // snapshot actually changes (the judges return a stable reference otherwise)
-  const handlePipelineFrame = useCallback((frame: PipelineFrame) => {
-    const practiceJudge = practiceJudgeRef.current;
-    if (practiceJudge !== null) {
-      const snapshot = practiceJudge.processFrame(frame);
-      setPractice((prev) => (prev === snapshot ? prev : snapshot));
-    }
-    const tempoJudge = tempoJudgeRef.current;
-    if (tempoJudge !== null) {
-      const snapshot = tempoJudge.processFrame(frame);
-      setTempo((prev) => (prev === snapshot ? prev : snapshot));
-    }
-  }, []);
-
-  const { listening, error: micError, toggle: toggleListen, currentReading } =
-    usePitchPipeline(handlePipelineFrame);
-
-  const practiceJudging = mode === 'practice' && listening;
-  const tempoJudging = mode === 'tempo' && listening;
-
   const {
+    mode,
+    setMode,
+    listening,
+    micError,
+    toggleListen,
+    currentReading,
+    micHintVisible,
+    noteVerdicts,
+    restWindowVerdicts,
+    cursorIndex,
     notes,
-    regenerateNotes,
     currentBeat,
     bpmInput,
     setBpmInput,
@@ -78,64 +46,14 @@ function App({
     setAllNotesShouldBeEqual,
     noteBoundaryPairName,
     setNoteBoundaryPairName,
-  } = useAppState({
+  } = useJudgedAppState({
     beatsPerBar,
     initialBpm,
     initialRests,
     noteBoundaryPairs,
-    beatClockEnabled: mode === 'tempo',
-    // hold the judged bar on screen past the wrap so the final window's
-    // verdict (especially a gray "missed") is actually visible
-    beatWrapRegenDelayMs: tempoJudging ? BAR_COMPLETE_DELAY_MS : 0,
+    createMicSource,
+    micErrorToMessage,
   });
-
-  const notesRef = useRef(notes);
-  notesRef.current = notes;
-  const currentBeatRef = useRef(currentBeat);
-  currentBeatRef.current = currentBeat;
-
-  // fresh practice judge whenever the bar changes or practice judging starts/stops
-  useEffect(() => {
-    practiceJudgeRef.current = practiceJudging
-      ? createPracticeJudge(notes.map(noteToMidi))
-      : null;
-    setPractice(null);
-  }, [notes, practiceJudging]);
-
-  // one tempo judge for as long as tempo judging runs: the mic-check hint
-  // counts consecutive bars, so the judge must survive bar regeneration
-  useEffect(() => {
-    tempoJudgeRef.current = tempoJudging
-      ? createTempoJudge({
-          targetMidis: notesRef.current.map(noteToMidi),
-          beatsPerBar,
-          initialBeat: currentBeatRef.current,
-        })
-      : null;
-    setTempo(null);
-  }, [tempoJudging, beatsPerBar]);
-
-  useEffect(() => {
-    const judge = tempoJudgeRef.current;
-    if (judge === null) return;
-    setTempo(judge.setTargets(notes.map(noteToMidi)));
-  }, [notes]);
-
-  useEffect(() => {
-    const judge = tempoJudgeRef.current;
-    if (judge === null) return;
-    const snapshot = judge.onBeat(currentBeat);
-    setTempo((prev) => (prev === snapshot ? prev : snapshot));
-  }, [currentBeat]);
-
-  const regenerateNotesRef = useRef(regenerateNotes);
-  regenerateNotesRef.current = regenerateNotes;
-
-  useEffect(() => {
-    if (!practice?.barComplete) return;
-    const timeoutId = window.setTimeout(() => regenerateNotesRef.current(), BAR_COMPLETE_DELAY_MS);
-    return () => window.clearTimeout(timeoutId);
-  }, [practice]);
 
   const bpmInputRef = useRef<HTMLInputElement>(null);
 
@@ -212,11 +130,9 @@ function App({
         elementId={vexFlowElementId}
         notes={notes}
         beatsPerBar={beatsPerBar}
-        noteVerdicts={
-          practiceJudging ? practice?.verdicts : tempoJudging ? tempo?.noteVerdicts : undefined
-        }
-        restWindowVerdicts={tempoJudging ? tempo?.restWindowVerdicts : undefined}
-        cursorIndex={practiceJudging ? practice?.cursorIndex ?? 0 : undefined}
+        noteVerdicts={noteVerdicts}
+        restWindowVerdicts={restWindowVerdicts}
+        cursorIndex={cursorIndex}
       />
       <div id="pitch-controls">
         <button
@@ -227,7 +143,7 @@ function App({
           {listening ? 'Stop listening' : 'Listen'}
         </button>
         {micError !== null && <span className="listen-error">{micError}</span>}
-        {tempoJudging && tempo?.micPossiblyDead && (
+        {micHintVisible && (
           <span className="mic-hint">Check your microphone?</span>
         )}
       </div>

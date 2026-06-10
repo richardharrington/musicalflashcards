@@ -11,6 +11,15 @@ export type { Note, NoteBoundaryPair } from './utils/noteUtils.tsx';
 
 export { default as useAppState } from './hooks/useAppState.ts';
 export { default as useBeatInterval } from './hooks/useBeatInterval.tsx';
+export { default as usePitchPipeline } from './hooks/usePitchPipeline.ts';
+export type {
+  MicFrameCallback,
+  MicSource,
+  CreateMicSource,
+  PipelineFrame,
+} from './hooks/usePitchPipeline.ts';
+export { default as useJudgedAppState } from './hooks/useJudgedAppState.ts';
+export type { Mode } from './hooks/useJudgedAppState.ts';
 
 export { buildFullMeasure } from './rendering/buildMeasure.ts';
 export type { MeasureDecorations } from './rendering/buildMeasure.ts';
@@ -26,6 +35,7 @@ export {
   RMS_HIGH,
   FRAME_SIZE,
   MIC_HINT_BARS,
+  BAR_COMPLETE_DELAY_MS,
   MIN_FREQ_HZ,
   MAX_FREQ_HZ,
 } from './pitch/constants.ts';

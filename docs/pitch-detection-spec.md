@@ -244,6 +244,9 @@ a dev build), implement a native `micSource` with the same frame-callback
 contract, reuse everything in shared. The notehead styling must already work
 through the SVG shim path (VexFlow `setStyle` emits `fill`/`stroke` attributes,
 which `svgShim.ts` already serializes).
+*Update 2026-06-10*: Phase 4 is fully specced in
+[`native-pitch-spec.md`](./native-pitch-spec.md); that document governs the
+native port.
 
 ## 5. Out of scope (decided against for v1)
 
@@ -451,8 +454,8 @@ sits beside its `<p>` rather than inside it).
 
 Phase 3 (web tempo mode) is implemented as specified, with the judgment calls
 and findings below. Verified end-to-end in headless Chrome with an injected
-oscillator microphone (see §8.5); the real-instrument acceptance pass in §4 is
-still pending for this phase too.
+oscillator microphone (see §8.5). The real-instrument acceptance pass in §4
+was subsequently completed and confirmed by the developer (2026-06-10).
 
 ### 8.1 Qualification model (resolving §3.1's "articulation+stableNote pair")
 
