@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPitchTracker, createNoteEventTracker } from '@musicalflashcards/shared';
+import { createPitchTracker, createNoteEventTracker, computeRms } from '@musicalflashcards/shared';
 import type { PitchReading, NoteEvent, StableRun } from '@musicalflashcards/shared';
 import { createMicSource } from '../audio/micSource.ts';
 
@@ -7,6 +7,9 @@ export type PipelineFrame = {
   reading: PitchReading | null;
   events: Array<NoteEvent>;
   currentRun: StableRun | null;
+  // raw frame RMS: the tempo judge's mic-check hint needs true loudness even
+  // on frames where the reading is null (spec §6.6)
+  rms: number;
   atMs: number;
 };
 
@@ -51,7 +54,13 @@ export default function usePitchPipeline(onFrame?: (frame: PipelineFrame) => voi
 
     const reading = pitchTrackerRef.current.processFrame(frame, atMs);
     const events = eventTracker.processFrame(reading, atMs);
-    onFrameRef.current?.({ reading, events, currentRun: eventTracker.getCurrentRun(), atMs });
+    onFrameRef.current?.({
+      reading,
+      events,
+      currentRun: eventTracker.getCurrentRun(),
+      rms: reading?.rms ?? computeRms(frame),
+      atMs,
+    });
 
     if (atMs - lastReadoutMsRef.current >= READOUT_INTERVAL_MS) {
       lastReadoutMsRef.current = atMs;

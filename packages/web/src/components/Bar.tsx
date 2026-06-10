@@ -17,6 +17,7 @@ type Props = {
   notes: Array<Note>;
   beatsPerBar: number;
   noteVerdicts?: Array<VerdictState>;
+  restWindowVerdicts?: Array<VerdictState>;
   cursorIndex?: number | null;
 };
 
@@ -25,6 +26,7 @@ function Bar({
   notes,
   beatsPerBar,
   noteVerdicts,
+  restWindowVerdicts,
   cursorIndex,
 }: Props) {
   useEffect(() => {
@@ -42,9 +44,13 @@ function Bar({
     stave.addClef('treble').addTimeSignature('4/4');
     stave.setContext(context).draw();
 
-    const tickables = buildFullMeasure(notes, beatsPerBar, { noteVerdicts, cursorIndex });
+    const tickables = buildFullMeasure(notes, beatsPerBar, {
+      noteVerdicts,
+      restWindowVerdicts,
+      cursorIndex,
+    });
     drawMeasure({ context, stave, tickables, beatsPerBar });
-  }, [notes, beatsPerBar, elementId, noteVerdicts, cursorIndex]);
+  }, [notes, beatsPerBar, elementId, noteVerdicts, restWindowVerdicts, cursorIndex]);
 
   return (
     <div id="output-container">

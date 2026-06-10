@@ -16,22 +16,39 @@ const makeRest = (duration: 'qr' | 'hr'): StaveNote =>
     duration,
   });
 
-// Verdict/cursor styling indexed by note position (rests are unstyled for now)
+// Verdict/cursor styling: noteVerdicts/cursorIndex are indexed by note
+// position; restWindowVerdicts is beat-indexed across the bar's leading rest
+// windows (a multi-beat rest glyph is marked if any of its windows was violated)
 export type MeasureDecorations = {
   noteVerdicts?: Array<VerdictState>;
+  restWindowVerdicts?: Array<VerdictState>;
   cursorIndex?: number | null;
 };
 
 export const buildFullMeasure = (
   notes: Array<Note>,
   beatsPerBar: number,
-  { noteVerdicts, cursorIndex }: MeasureDecorations = {},
+  { noteVerdicts, restWindowVerdicts, cursorIndex }: MeasureDecorations = {},
 ): Array<StaveNote> => {
   const restsPerBar = Math.max(0, beatsPerBar - notes.length);
   const tickables: Array<StaveNote> = [];
 
-  if (restsPerBar >= 2) tickables.push(makeRest('hr'));
-  if (restsPerBar === 1 || restsPerBar === 3) tickables.push(makeRest('qr'));
+  let restWindow = 0;
+  const pushRest = (duration: 'qr' | 'hr', beatSpan: number) => {
+    const rest = makeRest(duration);
+    const windows = restWindowVerdicts?.slice(restWindow, restWindow + beatSpan);
+    restWindow += beatSpan;
+    if (windows?.includes('restViolated')) {
+      const color = verdictColor('restViolated');
+      if (color !== null) {
+        rest.setStyle({ fillStyle: color, strokeStyle: color });
+      }
+    }
+    tickables.push(rest);
+  };
+
+  if (restsPerBar >= 2) pushRest('hr', 2);
+  if (restsPerBar === 1 || restsPerBar === 3) pushRest('qr', 1);
 
   notes.forEach((note, i) => {
     const staveNote = new StaveNote({

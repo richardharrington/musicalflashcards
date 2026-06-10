@@ -446,3 +446,100 @@ The §4 real-instrument pass surfaced one real bug and two readout changes:
 The DOM-nesting warnings noted in §7.4 as pre-existing were also fixed
 (`App.tsx`: the note-boundary radio group is a `<div>`, the coming-soon list
 sits beside its `<p>` rather than inside it).
+
+## 8. Phase 3 implementation addendum (2026-06-10)
+
+Phase 3 (web tempo mode) is implemented as specified, with the judgment calls
+and findings below. Verified end-to-end in headless Chrome with an injected
+oscillator microphone (see §8.5); the real-instrument acceptance pass in §4 is
+still pending for this phase too.
+
+### 8.1 Qualification model (resolving §3.1's "articulation+stableNote pair")
+
+The tempo judge does not consume `stableNote` events. It uses the same
+run-based model the practice judge settled on in §7.1: an articulation *arms*
+the judge, and each distinct stable run thereafter qualifies at most once,
+when it has been held `STABLE_MS` past `max(run start, articulation)`. The
+event-pair model would have broken a real case the run model handles: a
+re-strike of the same pitch where tracking persists through the dip emits
+**no** new `stableNote` (the run never resets), so consecutive identical
+targets in tempo mode would have been unjudgeable. Consequences, accepted
+deliberately for consistency with §7.1:
+
+- A sustained pitch cannot satisfy two windows (the run key blocks it).
+- A slurred pitch *change* starts a new run and is judged without a fresh
+  articulation — legato across note windows works, and within one window a
+  slide from a wrong note onto the target upgrades the verdict.
+- Verdicts upgrade but never downgrade within a window
+  (`wrong < wrongOctave < correct`).
+
+A qualifying strike is attributed to the window open at the moment stability
+is *confirmed* (per §3.1/§6.4). A strike more than `STABLE_MS` before its beat
+therefore lands in the preceding rest window (`restViolated`) and the note
+window goes `missed`; within `STABLE_MS` of the beat it lands correctly.
+
+### 8.2 Verdict timing and the deferred bar regeneration
+
+Note windows are judged eagerly: a qualifying strike colors its window the
+moment it qualifies (so a correct note turns green *during* its beat); a
+still-pending note window becomes `missed` when the window closes. This
+exposed a structural conflict in the spec: with default settings the only
+note window closes exactly at the bar wrap, where current behavior (§1)
+regenerates the bar instantly — gray would never be visible, contradicting
+§4's "silence marks it gray". The acceptance criterion won:
+
+- `useAppState` gained `beatWrapRegenDelayMs?: number` (default 0 = today's
+  behavior). While tempo-judging, the web app passes `BAR_COMPLETE_DELAY_MS`
+  (600 ms), capped internally to one beat so the regenerated bar still lands
+  inside beat 1 (always a rest window at 1–3 rests).
+- The judge does **not** reset verdicts at the wrap; they persist until
+  `setTargets` delivers the regenerated bar. During the holdover, strikes
+  bucket into the new bar's first rest window but draw on the old bar's rest
+  glyph — musically correct, visually marginal, accepted.
+- Known quirk: changing settings while tempo-judging mid-bar resets the beat
+  to 1, which schedules a second (deferred) regeneration ~600 ms after the
+  settings-driven one — the notes visibly change twice. Rare and harmless;
+  the instant-path equivalent already existed invisibly.
+
+### 8.3 Judge lifecycle (differs from the practice judge)
+
+One `createTempoJudge` instance spans bars — the mic hint counts
+*consecutive* bars, so the judge must survive regeneration. The app creates
+it when tempo judging starts (`initialBeat` = the beat at creation; a bar
+observed only partway never counts toward the mic hint), feeds bars via
+`setTargets(targetMidis)` (resets verdicts, keeps mic-hint state), and
+reports every `currentBeat` transition via `onBeat(beat)`. The armed
+articulation and judged-run key are cleared at each wrap, so a note held
+across the wrap can neither violate the new bar's first rest nor satisfy its
+windows without a fresh strike (symmetric with §7.3's practice rule).
+
+### 8.4 Mic-check hint semantics
+
+- `PipelineFrame` gained `rms: number` (raw frame RMS, `reading?.rms ??
+  computeRms(frame)`), per §6.6 — the hint must see true loudness on
+  null-reading frames.
+- A bar counts as silent only if **every** note window is `missed` *and* the
+  bar's mean raw RMS < `RMS_FLOOR`. An all-missed bar with ambient noise
+  breaks the consecutive-silence chain (counter resets) but does not clear an
+  already-raised flag; only a qualifying strike (any verdict, including
+  `restViolated`) clears it, immediately.
+- The hint renders as "Check your microphone?" next to the Listen toggle
+  (`.mic-hint`, amber).
+
+### 8.5 Rendering and verification notes
+
+- `MeasureDecorations` gained `restWindowVerdicts` (beat-indexed across the
+  bar's leading rest windows). `buildFullMeasure` maps windows onto rest
+  glyphs: the half rest spans two windows and is marked red if *either* was
+  violated, per §7.2's note.
+- Headless-Chrome findings for future verification: the fake media device
+  (`--use-fake-device-for-media-stream`) delivered *unpitched noise* in this
+  environment (no readings, RMS above the floor — usefully, it proved noisy
+  bars don't raise the mic hint), and `--use-file-for-fake-audio-capture`
+  silently delivered zeros (which proved the hint raises after two silent
+  bars). To exercise the pitched paths, override `getUserMedia` via CDP
+  `Page.addScriptToEvaluateOnNewDocument` to return an
+  `OscillatorNode → GainNode → MediaStreamDestination` stream and drive
+  frequency/gain from the test — this verified correct/green during the
+  note's own beat, the live readout, restViolated/red on a rest strike,
+  missed/gray persisting through the wrap holdover, and wrongOctave.

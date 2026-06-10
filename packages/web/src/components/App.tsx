@@ -9,9 +9,14 @@ import {
   getNoteBoundaryDisplayString,
   useAppState,
   createPracticeJudge,
+  createTempoJudge,
   noteToMidi,
 } from '@musicalflashcards/shared';
-import type { NoteBoundaryPair, PracticeSnapshot } from '@musicalflashcards/shared';
+import type {
+  NoteBoundaryPair,
+  PracticeSnapshot,
+  TempoSnapshot,
+} from '@musicalflashcards/shared';
 
 type Props = {
   beatsPerBar: number;
@@ -35,6 +40,32 @@ function App({
 }: Props) {
   const [mode, setMode] = useState<Mode>('tempo');
 
+  const practiceJudgeRef = useRef<ReturnType<typeof createPracticeJudge> | null>(null);
+  const tempoJudgeRef = useRef<ReturnType<typeof createTempoJudge> | null>(null);
+  const [practice, setPractice] = useState<PracticeSnapshot | null>(null);
+  const [tempo, setTempo] = useState<TempoSnapshot | null>(null);
+
+  // judges consume frames directly (60 Hz); React state only changes when a
+  // snapshot actually changes (the judges return a stable reference otherwise)
+  const handlePipelineFrame = useCallback((frame: PipelineFrame) => {
+    const practiceJudge = practiceJudgeRef.current;
+    if (practiceJudge !== null) {
+      const snapshot = practiceJudge.processFrame(frame);
+      setPractice((prev) => (prev === snapshot ? prev : snapshot));
+    }
+    const tempoJudge = tempoJudgeRef.current;
+    if (tempoJudge !== null) {
+      const snapshot = tempoJudge.processFrame(frame);
+      setTempo((prev) => (prev === snapshot ? prev : snapshot));
+    }
+  }, []);
+
+  const { listening, error: micError, toggle: toggleListen, currentReading } =
+    usePitchPipeline(handlePipelineFrame);
+
+  const practiceJudging = mode === 'practice' && listening;
+  const tempoJudging = mode === 'tempo' && listening;
+
   const {
     notes,
     regenerateNotes,
@@ -53,32 +84,49 @@ function App({
     initialRests,
     noteBoundaryPairs,
     beatClockEnabled: mode === 'tempo',
+    // hold the judged bar on screen past the wrap so the final window's
+    // verdict (especially a gray "missed") is actually visible
+    beatWrapRegenDelayMs: tempoJudging ? BAR_COMPLETE_DELAY_MS : 0,
   });
 
-  const judgeRef = useRef<ReturnType<typeof createPracticeJudge> | null>(null);
-  const [practice, setPractice] = useState<PracticeSnapshot | null>(null);
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
+  const currentBeatRef = useRef(currentBeat);
+  currentBeatRef.current = currentBeat;
 
-  // judge consumes frames directly (60 Hz); React state only changes when a
-  // snapshot actually changes (the judge returns a stable reference otherwise)
-  const handlePipelineFrame = useCallback((frame: PipelineFrame) => {
-    const judge = judgeRef.current;
-    if (judge === null) return;
-    const snapshot = judge.processFrame(frame);
-    setPractice((prev) => (prev === snapshot ? prev : snapshot));
-  }, []);
-
-  const { listening, error: micError, toggle: toggleListen, currentReading } =
-    usePitchPipeline(handlePipelineFrame);
-
-  // fresh judge whenever the bar changes or practice judging starts/stops
+  // fresh practice judge whenever the bar changes or practice judging starts/stops
   useEffect(() => {
-    if (mode === 'practice' && listening) {
-      judgeRef.current = createPracticeJudge(notes.map(noteToMidi));
-    } else {
-      judgeRef.current = null;
-    }
+    practiceJudgeRef.current = practiceJudging
+      ? createPracticeJudge(notes.map(noteToMidi))
+      : null;
     setPractice(null);
-  }, [notes, mode, listening]);
+  }, [notes, practiceJudging]);
+
+  // one tempo judge for as long as tempo judging runs: the mic-check hint
+  // counts consecutive bars, so the judge must survive bar regeneration
+  useEffect(() => {
+    tempoJudgeRef.current = tempoJudging
+      ? createTempoJudge({
+          targetMidis: notesRef.current.map(noteToMidi),
+          beatsPerBar,
+          initialBeat: currentBeatRef.current,
+        })
+      : null;
+    setTempo(null);
+  }, [tempoJudging, beatsPerBar]);
+
+  useEffect(() => {
+    const judge = tempoJudgeRef.current;
+    if (judge === null) return;
+    setTempo(judge.setTargets(notes.map(noteToMidi)));
+  }, [notes]);
+
+  useEffect(() => {
+    const judge = tempoJudgeRef.current;
+    if (judge === null) return;
+    const snapshot = judge.onBeat(currentBeat);
+    setTempo((prev) => (prev === snapshot ? prev : snapshot));
+  }, [currentBeat]);
 
   const regenerateNotesRef = useRef(regenerateNotes);
   regenerateNotesRef.current = regenerateNotes;
@@ -88,8 +136,6 @@ function App({
     const timeoutId = window.setTimeout(() => regenerateNotesRef.current(), BAR_COMPLETE_DELAY_MS);
     return () => window.clearTimeout(timeoutId);
   }, [practice]);
-
-  const judging = mode === 'practice' && listening;
 
   const bpmInputRef = useRef<HTMLInputElement>(null);
 
@@ -166,8 +212,11 @@ function App({
         elementId={vexFlowElementId}
         notes={notes}
         beatsPerBar={beatsPerBar}
-        noteVerdicts={judging ? practice?.verdicts : undefined}
-        cursorIndex={judging ? practice?.cursorIndex ?? 0 : undefined}
+        noteVerdicts={
+          practiceJudging ? practice?.verdicts : tempoJudging ? tempo?.noteVerdicts : undefined
+        }
+        restWindowVerdicts={tempoJudging ? tempo?.restWindowVerdicts : undefined}
+        cursorIndex={practiceJudging ? practice?.cursorIndex ?? 0 : undefined}
       />
       <div id="pitch-controls">
         <button
@@ -178,6 +227,9 @@ function App({
           {listening ? 'Stop listening' : 'Listen'}
         </button>
         {micError !== null && <span className="listen-error">{micError}</span>}
+        {tempoJudging && tempo?.micPossiblyDead && (
+          <span className="mic-hint">Check your microphone?</span>
+        )}
       </div>
       {listening && (
         <LiveReadout reading={currentReading} prominent={mode === 'practice'} />

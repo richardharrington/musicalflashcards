@@ -47,6 +47,8 @@ export type {
   PracticeFrameInput,
   PracticeSnapshot,
 } from './pitch/practiceJudge.ts';
+export { createTempoJudge } from './pitch/tempoJudge.ts';
+export type { TempoFrameInput, TempoSnapshot } from './pitch/tempoJudge.ts';
 
 export {
   FakeSVGElement,
