@@ -3,10 +3,13 @@ import { ScrollView, StyleSheet, Switch, Text, TextInput, Pressable, View } from
 import {
   PITCH_CLASS,
   useAppState,
+  usePitchPipeline,
   getNoteBoundaryDisplayString,
 } from '@musicalflashcards/shared';
 import type { NoteBoundaryPair } from '@musicalflashcards/shared';
+import { createMicSource, micErrorToMessage } from './audio/micSource';
 import Bar from './components/Bar';
+import LiveReadout from './components/LiveReadout';
 import VisualMetronome from './components/VisualMetronome';
 
 const NOTE_BOUNDARY_PAIRS: Record<string, NoteBoundaryPair> = {
@@ -57,11 +60,36 @@ export default function App() {
     noteBoundaryPairs: NOTE_BOUNDARY_PAIRS,
   });
 
+  const {
+    listening,
+    error: micError,
+    toggle: toggleListen,
+    currentReading,
+  } = usePitchPipeline({ createMicSource, micErrorToMessage });
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Musical Flashcards</Text>
 
       <Bar notes={notes} beatsPerBar={beatsPerBar} />
+
+      <View style={styles.pitchControls}>
+        <Pressable
+          style={[
+            styles.listenButton,
+            listening && styles.listenButtonListening,
+            micError !== null && styles.listenButtonError,
+          ]}
+          onPress={() => void toggleListen()}
+        >
+          <Text style={styles.listenButtonText}>
+            {listening ? 'Stop listening' : 'Listen'}
+          </Text>
+        </Pressable>
+        {micError !== null && <Text style={styles.listenError}>{micError}</Text>}
+      </View>
+
+      {listening && <LiveReadout reading={currentReading} prominent={false} />}
 
       <VisualMetronome beatsPerBar={beatsPerBar} currentBeat={currentBeat} />
 
@@ -140,6 +168,36 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 16,
+  },
+  pitchControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  listenButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f5f5f5',
+  },
+  listenButtonListening: {
+    borderColor: '#15803d',
+    borderWidth: 2,
+  },
+  listenButtonError: {
+    borderColor: '#dc2626',
+  },
+  listenButtonText: {
+    fontSize: 15,
+    color: '#213547',
+  },
+  listenError: {
+    fontSize: 16,
+    color: '#dc2626',
+    flexShrink: 1,
   },
   settings: {
     width: '100%',

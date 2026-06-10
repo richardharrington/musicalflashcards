@@ -12,9 +12,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.richardharrington.musicalflashcards"
     },
     "android": {
+      "package": "com.richardharrington.musicalflashcards",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,6 +27,26 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "react-native-audio-api",
+        {
+          "iosBackgroundMode": false,
+          "iosMicrophonePermission": "Musical Flashcards uses the microphone to hear the notes you play and compare them to the displayed notes.",
+          "androidPermissions": [
+            "android.permission.RECORD_AUDIO"
+          ],
+          "androidForegroundService": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Musical Flashcards uses the microphone to hear the notes you play and compare them to the displayed notes."
+        }
+      ],
+      "expo-asset"
+    ]
   }
 }

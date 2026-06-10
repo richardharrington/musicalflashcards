@@ -299,3 +299,149 @@ Stage a (shared refactor) is implemented per §2.1, with these judgment calls:
   explicit-extension imports vs. native's tsconfig, which lacks
   `allowImportingTsExtensions`) — present before this stage, unchanged by it,
   and irrelevant to Metro.
+
+## 8. Stage b implementation addendum (2026-06-10)
+
+Stage b (dev-build infra + native capture) is implemented per §2.2–§2.3, with
+these findings and judgment calls:
+
+- **Installed versions** (all chosen by `npx expo install` as Expo SDK 54
+  compatible): `react-native-audio-api` **0.12.2** (matches the spec's
+  `^0.12.2`), `expo-dev-client` ~6.0.21, `expo-audio` ~1.1.1. The permission
+  API is expo-audio's `requestRecordingPermissionsAsync` — it reports prior
+  denial on both platforms without starting a recorder, satisfying §2.2's
+  criterion.
+- **API drift from §2.2's sketch**: in 0.12.2 the `AudioRecorder` constructor
+  takes no options. The `{ sampleRate: 48000, bufferLength: 512,
+  channelCount: 1 }` config is passed to `onAudioReady(options, callback)`
+  instead, and `start()` returns a `Result` (`status: 'success' | 'error'`)
+  rather than throwing — `micSource.start()` converts an error result into a
+  rejection. Callbacks deliver `{ buffer, numFrames, when }` with `when` in
+  seconds since recording start; `atMs = (when + numFrames / sampleRate) *
+  1000`, with the sample rate read from `event.buffer.sampleRate` (the actual
+  rate, not the requested one).
+- **The audio-api config plugin's defaults violate §2.3**: left alone it adds
+  the iOS `audio` background mode, Android `FOREGROUND_SERVICE*` permissions,
+  and a `CentralizedForegroundService`. `app.json` explicitly sets
+  `iosBackgroundMode: false`, `androidForegroundService: false`, and
+  `androidPermissions: ["android.permission.RECORD_AUDIO"]` only. Generated
+  projects were inspected to confirm: mic usage description present, **no**
+  `UIBackgroundModes`; `RECORD_AUDIO` present, **no** foreground service.
+  (expo-audio's plugin also adds `MODIFY_AUDIO_SETTINGS` — harmless.)
+- **Native error mapper** distinguishes only permission denial ("Microphone
+  access denied") from everything else ("Microphone unavailable"); "No
+  microphone found" has no reliable native signal (phones and emulators
+  always report a mic), so that string remains web-only in practice.
+- `ios.bundleIdentifier` / `android.package` were added
+  (`com.richardharrington.musicalflashcards`) — prebuild cannot run
+  non-interactively without them. `npm start` is now `expo start
+  --dev-client`.
+- **Verified on this machine**: all 56 vitest tests pass; web type-checks and
+  builds (untouched by this stage); native `tsc --noEmit` shows no new errors
+  beyond the pre-existing TS5097 floor; `npx expo prebuild --no-install`
+  generates both native projects with the plist/manifest assertions above;
+  `npx expo export` bundles both platforms through Metro (micSource,
+  expo-audio, and audio-api all resolve).
+- **Not yet verified** (the implementing machine has neither Xcode nor the
+  Android SDK): `expo run:ios` / `expo run:android` dev builds and the §3.2
+  simulator/emulator checks (permission grant/deny flows, readout tracking
+  host-mic sound, mic release on toggle-off). Stage b's *done when* remains
+  open until those runs happen on a machine with the platform toolchains.
+- **Version-skew gotcha found during the first simulator run**: `expo-audio`
+  declares a peer dependency on `expo-asset: "*"`, which npm satisfied with
+  the *latest* expo-asset (56.0.16, an SDK 56 module) rather than the SDK 54
+  one nested under `expo/node_modules` (12.0.x). The stray SDK 56 copy made
+  expo-modules-autolinking link **no** ExpoAsset pod at all, and the app
+  red-screened at launch with "Cannot find native module 'ExpoAsset'". Fix:
+  `npx expo install expo-asset` pins the SDK-bundled version (~12.0.13) as a
+  direct dependency of `packages/native`, so every consumer dedupes onto it.
+  Watch for the same pattern with any future expo-module peer dep resolved
+  through npm workspaces.
+
+### iOS simulator verification findings (2026-06-10, all §3.2 stage b checks pass)
+
+Three library defects in `react-native-audio-api` 0.12.2 were found and worked
+around during the iOS simulator pass; all three live in `micSource.ts`:
+
+- **The library never gives its own recorder a recordable session.** Its iOS
+  session manager defaults to a playback-only category and does not switch
+  when a recorder starts; the recorder's input node then fails to materialize
+  ("missing live input format" in the system log) and start() succeeds while
+  delivering zero buffers.
+- **Changing the category through the library crashes the simulator.**
+  `AudioManager.setAudioSessionOptions` flags an audio-engine rebuild; the
+  next recorder start then destroys an engine holding a live AURemoteIO,
+  whose deallocation can abort the process on the simulator (RPC timeout in
+  `AVAudioEngine dealloc` — SIGABRT ~2 s after tapping Listen). It is timing
+  dependent: one session survived it, two crashed. Resolution for both
+  findings: `AudioManager.disableSessionManagement()` at module load (the
+  rebuild path becomes unreachable), with the session configured and
+  activated through **expo-audio** (`setAudioModeAsync({ allowsRecording:
+  true, playsInSilentMode: true })` + `setIsAudioActiveAsync(true)` in
+  `start()`, `setIsAudioActiveAsync(false)` in `stop()`). Division of labor:
+  expo-audio owns permissions **and** the audio session; the library owns
+  capture only.
+- **The audioReady event's `when` timestamp does not exist.** The 0.12.2
+  TypeScript types declare `{ buffer, numFrames, when }`, but the native
+  payload (`AudioReadyPayload::toJsiObject`) only sets `buffer` and
+  `numFrames`. Deriving `atMs` from `event.when` yields NaN, which silently
+  defeats every `elapsed >= interval` check downstream (readout throttle,
+  judge timing) — frames flow but nothing visibly updates. `atMs` is instead
+  derived from the running sample count (`samplesWritten / sampleRate`),
+  which is monotonic — the only property the trackers/judges require.
+
+Simulator-environment notes for future agent runs:
+
+- The **host** mic permission for Simulator.app must be granted in macOS
+  (System Settings → Privacy & Security → Microphone). If Simulator is
+  missing from that list the sim gets no input data with no error anywhere;
+  `tccutil reset Microphone com.apple.iphonesimulator` forces a fresh prompt
+  on next mic use. Also confirm Simulator → I/O → Audio Input is set to the
+  host microphone.
+- `xcrun simctl privacy booted revoke microphone <bundle-id>` kills the app
+  (normal iOS behavior); relaunch before testing the deny flow. The readout
+  was driven by playing generated sine WAVs (A4/F♯4) through the Mac
+  speakers with `afplay` at output volume ≈ 70 (tone RMS reached ~0.09,
+  clarity 1.00).
+
+### Android emulator verification findings (2026-06-10, all §3.2 stage b checks pass)
+
+No app-code changes were needed for Android — the same micSource worked once
+the **emulator environment** was tamed. All §3.2 checks pass (grant prompt →
+listening; A4/F♯4 readout incl. accidental, clarity 1.00; em-dash on
+silence; toggle-off; deny → "Microphone access denied" error state, driven
+entirely via `adb shell input tap`). Emulator-environment notes, hard-won:
+
+- **qemu segfaults when the host mic runs at 48 kHz** (crash in
+  `audioInputDeviceIOProc`, emulator 36.6.11): the moment the app started
+  recording with host audio enabled, the whole emulator died. Fix: set the
+  Mac microphone's nominal sample rate to **44.1 kHz** (Audio MIDI Setup, or
+  programmatically via CoreAudio's `kAudioDevicePropertyNominalSampleRate`).
+- **Quickboot snapshots freeze the virtual audio device's state.** Boots
+  that restored a snapshot taken before host audio was enabled delivered
+  buffers of pure zeros (frames flowed, RMS exactly 0.0000) regardless of
+  any toggle. Fix: **cold boot** (`emulator -avd Pixel_10 -no-snapshot
+  -allow-host-audio`) after changing audio settings.
+- Host mic routing needs both the `-allow-host-audio` launch flag and the
+  runtime toggle (extended controls → Microphone → "Enable Host Microphone
+  Access", scriptable via the emulator console: `auth <token>` then `avd
+  hostmicon` on telnet port 5554).
+- The macOS mic-permission (TCC) attribution for a terminal-launched
+  emulator is the terminal app itself — verify it's granted (an
+  `AVCaptureDevice.requestAccess(for: .audio)` Swift one-liner run from the
+  same shell reports/raises it).
+- `adb shell pm revoke <pkg> android.permission.RECORD_AUDIO` kills the app
+  like on iOS; unlike iOS, the next request **re-prompts** (deny flow is
+  tested by tapping "Don't allow").
+- **Restart Metro with `--clear` after any npm-install that moves packages**
+  (e.g. the expo-asset pin): a Metro started before the install serves stale
+  module paths and the Android bundle fails with ENOENT TransformErrors,
+  even when an iOS bundle from the same server still works.
+- Recent Android Studio runs emulators **embedded in its Running Devices
+  tool window** — no separate window appears; the device is still fully
+  reachable via adb.
+
+With both platform passes green, **stage b's agent-level acceptance (§4) is
+met**: working dev builds on both platforms; permission grant/deny flows
+produce the right toggle states; the readout tracks host-mic sound including
+accidentals; toggling off releases the mic.
