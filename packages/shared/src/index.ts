@@ -13,6 +13,7 @@ export { default as useAppState } from './hooks/useAppState.ts';
 export { default as useBeatInterval } from './hooks/useBeatInterval.tsx';
 
 export { buildFullMeasure } from './rendering/buildMeasure.ts';
+export type { MeasureDecorations } from './rendering/buildMeasure.ts';
 export { drawMeasure } from './rendering/drawMeasure.ts';
 
 export {
@@ -38,6 +39,14 @@ export { createPitchTracker, computeRms } from './pitch/pitchTracker.ts';
 export type { PitchReading } from './pitch/pitchTracker.ts';
 export { createNoteEventTracker } from './pitch/noteEventTracker.ts';
 export type { NoteEvent } from './pitch/noteEventTracker.ts';
+export { VERDICT_COLORS, CURSOR_COLOR, verdictColor } from './pitch/verdicts.ts';
+export type { VerdictState } from './pitch/verdicts.ts';
+export { createPracticeJudge } from './pitch/practiceJudge.ts';
+export type {
+  StableRun,
+  PracticeFrameInput,
+  PracticeSnapshot,
+} from './pitch/practiceJudge.ts';
 
 export {
   FakeSVGElement,

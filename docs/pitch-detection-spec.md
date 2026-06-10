@@ -341,3 +341,84 @@ numbers), and `midiToDisplayName` still names out-of-range pitches truthfully
   long buffer, like a real stream) and LCG-seeded deterministic white noise so
   the clarity-gate tests cannot flake. Reuse these helpers when testing the
   judges.
+
+## 7. Phase 2 implementation addendum (2026-06-10)
+
+Phase 2 (web practice mode) is implemented as specified, with the judgment
+calls and findings below. Verified end-to-end in headless Chrome with a fake
+microphone (mode switching, Listen lifecycle, readout, cursor coloring); the
+real-instrument acceptance pass in §4 is still pending.
+
+### 7.1 Practice-judge semantics (resolving §3.1 ambiguities)
+
+- **All outcomes are judged at `HOLD_MS`, not `STABLE_MS`.** §3.1's bullet
+  list ("matches target → correct; wrong octave → transient; otherwise →
+  transient wrong") hangs off the "sustained for `HOLD_MS`" condition, so
+  wrong-note feedback also waits the full 250 ms hold. Uniform and simple; if
+  faster wrong-note feedback is ever wanted, judge non-matching runs at
+  `STABLE_MS` instead.
+- **The hold is measured from `max(run start, last articulation)`.** Covers
+  the re-strike case where pitch tracking persists through the dip (the run's
+  `startedAtMs` predates the articulation): the player must hold for
+  `HOLD_MS` *after* the re-strike, not get instant credit.
+- **Each stable run is judged at most once per articulation, but a pitch
+  change starts a new run and is judged again.** Consequence: striking a
+  wrong note and *sliding* onto the target (violin-style, no re-strike)
+  advances the cursor. One strike can yield several transient wrongs and then
+  a correct. This was judged desirable (it's how players tune into a note);
+  if it ever isn't, key the once-per-articulation guard on the articulation
+  alone instead of the run.
+- **`processFrame` returns the same snapshot object reference until something
+  changes.** Callers use the snapshot directly as React state; identity
+  equality makes the 60 Hz frame loop free of render churn. Keep this
+  invariant when extending the judge.
+
+### 7.2 API deviations from §3.2
+
+- `usePitchPipeline` exposes `{ listening, error, toggle, currentReading }`
+  plus an `onFrame` callback parameter — there is no `events` field in the
+  returned state. The spec itself says judges consume events "directly, not
+  via React state"; the callback (called per frame with
+  `{ reading, events, currentRun, atMs }`) is that direct path. The judge
+  lives in `App.tsx` behind a ref; only snapshot changes touch state.
+- `Bar`'s decoration props are **note-indexed**, not tickable-indexed:
+  `noteVerdicts: Array<VerdictState>` aligns with the `notes` array and
+  `cursorIndex` is an index into it. Rests are unstyled for now. Phase 3 will
+  need to add rest styling to `buildFullMeasure`'s `MeasureDecorations`
+  (remember: a half rest is one tickable spanning two beat windows — mark it
+  `restViolated` if *either* window is violated).
+- `useAppState` gained `beatClockEnabled?: boolean` (default `true`; `false`
+  zeroes the beat interval and pins `currentBeat` to 1) and a returned
+  `regenerateNotes()`. Both optional/additive, so the native app is untouched.
+
+### 7.3 UI decisions the spec left open
+
+- **Default mode is Tempo**, so the app loads behaving exactly as it did
+  before this feature. Practice is one click away.
+- **Bar completion pauses 600 ms** (`BAR_COMPLETE_DELAY_MS` in `App.tsx`)
+  before regenerating, so the player sees the last note turn green.
+- The judge is recreated whenever the bar, mode, or listening state changes;
+  a note held across a bar regeneration cannot satisfy the new bar's first
+  target (a fresh articulation is required — consistent with "hold + clear
+  gap").
+- Verdict colors: correct `#15803d`, wrongOctave `#d97706`, wrong/restViolated
+  `#dc2626`, missed `#9ca3af`, cursor `#2563eb` (in `pitch/verdicts.ts`).
+
+### 7.4 Findings
+
+- **Real bug found by the browser smoke test**: the VexFlow SVG canvas is
+  500 px wide inside a 160 px scaled container; the invisible overflow sat on
+  top of the Listen button and swallowed its clicks. Fixed with
+  `pointer-events: none` on `#output`. Anything interactive placed near the
+  staff needs this to stay.
+- The mic source guards stop-during-start with a session counter
+  (`getUserMedia` resolving after the user already toggled off must not leak
+  a live mic). It reuses one `Float32Array` per frame; consumers must process
+  frames synchronously, never retain them.
+- Headless-Chrome testing works with
+  `--use-fake-ui-for-media-stream --use-fake-device-for-media-stream`
+  (auto-granted fake mic); useful for Phase 3 verification too.
+- Pre-existing console noise, not from this feature: `validateDOMNesting`
+  warnings (`<p>` inside `<p>`, `<ul>` inside `<p>` in `App.tsx`) and a
+  favicon 404. Also pre-existing: the repo's `npm run lint` has no ESLint
+  config file anywhere, so it errors before linting.

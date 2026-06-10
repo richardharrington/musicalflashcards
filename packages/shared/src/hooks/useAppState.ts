@@ -8,6 +8,7 @@ type Params = {
   initialBpm: number;
   initialRests: number;
   noteBoundaryPairs: Record<string, NoteBoundaryPair>;
+  beatClockEnabled?: boolean; // false in practice mode: no metronome, bar advances on completion
 };
 
 export default function useAppState({
@@ -15,6 +16,7 @@ export default function useAppState({
   initialBpm,
   initialRests,
   noteBoundaryPairs,
+  beatClockEnabled = true,
 }: Params) {
   const [noteBoundaryPairName, setNoteBoundaryPairName] = useState('lowGToHighC');
   const { low, high } = noteBoundaryPairs[noteBoundaryPairName];
@@ -42,8 +44,18 @@ export default function useAppState({
     }
   }, [currentBeat]);
 
+  useEffect(() => {
+    if (!beatClockEnabled) {
+      setCurrentBeat(1);
+    }
+  }, [beatClockEnabled]);
+
+  const regenerateNotes = () => setNotes(genNotes());
+
   const beatInterval =
-    bpm > 0 && Number.isFinite(bpm) ? Math.floor((1000 * 60) / bpm) : 0;
+    beatClockEnabled && bpm > 0 && Number.isFinite(bpm)
+      ? Math.floor((1000 * 60) / bpm)
+      : 0;
 
   useBeatInterval({
     beatsPerBar,
@@ -54,6 +66,7 @@ export default function useAppState({
 
   return {
     notes,
+    regenerateNotes,
     currentBeat,
     beatsPerBar,
 

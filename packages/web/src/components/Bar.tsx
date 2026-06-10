@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Vex } from 'vexflow';
-import type { Note } from '@musicalflashcards/shared';
+import type { Note, VerdictState } from '@musicalflashcards/shared';
 import { buildFullMeasure, drawMeasure } from '@musicalflashcards/shared';
 
 const clearElementChildren = (elementId: string) => {
@@ -16,12 +16,16 @@ type Props = {
   elementId: string;
   notes: Array<Note>;
   beatsPerBar: number;
+  noteVerdicts?: Array<VerdictState>;
+  cursorIndex?: number | null;
 };
 
 function Bar({
   elementId,
   notes,
   beatsPerBar,
+  noteVerdicts,
+  cursorIndex,
 }: Props) {
   useEffect(() => {
     clearElementChildren(elementId);
@@ -38,9 +42,9 @@ function Bar({
     stave.addClef('treble').addTimeSignature('4/4');
     stave.setContext(context).draw();
 
-    const tickables = buildFullMeasure(notes, beatsPerBar);
+    const tickables = buildFullMeasure(notes, beatsPerBar, { noteVerdicts, cursorIndex });
     drawMeasure({ context, stave, tickables, beatsPerBar });
-  }, [notes, beatsPerBar, elementId]);
+  }, [notes, beatsPerBar, elementId, noteVerdicts, cursorIndex]);
 
   return (
     <div id="output-container">

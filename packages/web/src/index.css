@@ -139,6 +139,65 @@ input {
   transform: scale(2);
   width: 160px;
   height: 150px;
+  /* the SVG canvas is larger than the visible staff and overlaps the
+     controls below it; don't let it swallow their clicks */
+  pointer-events: none;
+}
+
+#pitch-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+#listen-toggle {
+  color: #f9f9f9;
+}
+
+@media (prefers-color-scheme: light) {
+  #listen-toggle {
+    color: #213547;
+  }
+}
+
+#listen-toggle.listening {
+  border-color: #15803d;
+  box-shadow: 0 0 0 1px #15803d;
+}
+
+#listen-toggle.listen-error-state {
+  border-color: #dc2626;
+}
+
+.listen-error {
+  color: #dc2626;
+  font-size: 1rem;
+}
+
+.live-readout {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-readout-prominent {
+  font-size: 2.5rem;
+  font-weight: bold;
+  min-height: 3.5rem;
+  margin-bottom: 30px;
+}
+
+.live-readout-muted {
+  font-size: 1rem;
+  color: #9ca3af;
+  min-height: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.practice-prompt {
+  text-align: center;
+  color: #6b7280;
 }
 
 .bpm-row {

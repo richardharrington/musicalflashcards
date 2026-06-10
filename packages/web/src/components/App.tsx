@@ -1,8 +1,17 @@
-import { useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import cx from 'classnames';
 import VisualMetronome from './VisualMetronome';
 import Bar from './Bar';
-import { getNoteBoundaryDisplayString, useAppState } from '@musicalflashcards/shared';
-import type { NoteBoundaryPair } from '@musicalflashcards/shared';
+import LiveReadout from './LiveReadout';
+import usePitchPipeline from '../hooks/usePitchPipeline.ts';
+import type { PipelineFrame } from '../hooks/usePitchPipeline.ts';
+import {
+  getNoteBoundaryDisplayString,
+  useAppState,
+  createPracticeJudge,
+  noteToMidi,
+} from '@musicalflashcards/shared';
+import type { NoteBoundaryPair, PracticeSnapshot } from '@musicalflashcards/shared';
 
 type Props = {
   beatsPerBar: number;
@@ -12,6 +21,11 @@ type Props = {
   noteBoundaryPairs: Record<string, NoteBoundaryPair>;
 };
 
+type Mode = 'practice' | 'tempo';
+
+// let the player see the last note turn green before the bar regenerates
+const BAR_COMPLETE_DELAY_MS = 600;
+
 function App({
   beatsPerBar,
   initialBpm,
@@ -19,8 +33,11 @@ function App({
   vexFlowElementId,
   noteBoundaryPairs,
 }: Props) {
+  const [mode, setMode] = useState<Mode>('tempo');
+
   const {
     notes,
+    regenerateNotes,
     currentBeat,
     bpmInput,
     setBpmInput,
@@ -30,7 +47,49 @@ function App({
     setAllNotesShouldBeEqual,
     noteBoundaryPairName,
     setNoteBoundaryPairName,
-  } = useAppState({ beatsPerBar, initialBpm, initialRests, noteBoundaryPairs });
+  } = useAppState({
+    beatsPerBar,
+    initialBpm,
+    initialRests,
+    noteBoundaryPairs,
+    beatClockEnabled: mode === 'tempo',
+  });
+
+  const judgeRef = useRef<ReturnType<typeof createPracticeJudge> | null>(null);
+  const [practice, setPractice] = useState<PracticeSnapshot | null>(null);
+
+  // judge consumes frames directly (60 Hz); React state only changes when a
+  // snapshot actually changes (the judge returns a stable reference otherwise)
+  const handlePipelineFrame = useCallback((frame: PipelineFrame) => {
+    const judge = judgeRef.current;
+    if (judge === null) return;
+    const snapshot = judge.processFrame(frame);
+    setPractice((prev) => (prev === snapshot ? prev : snapshot));
+  }, []);
+
+  const { listening, error: micError, toggle: toggleListen, currentReading } =
+    usePitchPipeline(handlePipelineFrame);
+
+  // fresh judge whenever the bar changes or practice judging starts/stops
+  useEffect(() => {
+    if (mode === 'practice' && listening) {
+      judgeRef.current = createPracticeJudge(notes.map(noteToMidi));
+    } else {
+      judgeRef.current = null;
+    }
+    setPractice(null);
+  }, [notes, mode, listening]);
+
+  const regenerateNotesRef = useRef(regenerateNotes);
+  regenerateNotesRef.current = regenerateNotes;
+
+  useEffect(() => {
+    if (!practice?.barComplete) return;
+    const timeoutId = window.setTimeout(() => regenerateNotesRef.current(), BAR_COMPLETE_DELAY_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [practice]);
+
+  const judging = mode === 'practice' && listening;
 
   const bpmInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,6 +143,22 @@ function App({
     return elems;
   };
 
+  const renderModeInputs = () => {
+    const modes: Array<[Mode, string]> = [['practice', 'Practice'], ['tempo', 'Tempo']];
+    return modes.map(([value, label]) => (
+      <span className="radio-input-row" key={value}>
+        <input
+          type="radio"
+          name="input-mode"
+          value={value}
+          checked={mode === value}
+          onChange={() => setMode(value)}
+        />
+        <label>{label}</label>
+      </span>
+    ));
+  };
+
   return (
     <>
       <h1 id="header">Musical Flashcards</h1>
@@ -91,13 +166,38 @@ function App({
         elementId={vexFlowElementId}
         notes={notes}
         beatsPerBar={beatsPerBar}
+        noteVerdicts={judging ? practice?.verdicts : undefined}
+        cursorIndex={judging ? practice?.cursorIndex ?? 0 : undefined}
       />
-      <VisualMetronome
-        beatsPerBar={beatsPerBar}
-        currentBeat={currentBeat}
-      />
+      <div id="pitch-controls">
+        <button
+          id="listen-toggle"
+          className={cx({ listening, 'listen-error-state': micError !== null })}
+          onClick={() => void toggleListen()}
+        >
+          {listening ? 'Stop listening' : 'Listen'}
+        </button>
+        {micError !== null && <span className="listen-error">{micError}</span>}
+      </div>
+      {listening && (
+        <LiveReadout reading={currentReading} prominent={mode === 'practice'} />
+      )}
+      {mode === 'practice' && !listening && (
+        <p className="practice-prompt">
+          Turn on Listen, then play each highlighted note to advance.
+        </p>
+      )}
+      {mode === 'tempo' && (
+        <VisualMetronome
+          beatsPerBar={beatsPerBar}
+          currentBeat={currentBeat}
+        />
+      )}
       <div className="content-container">
         <div className="content">
+          <p>
+            {renderModeInputs()}
+          </p>
           <p className="bpm-row">
             <span className="bpm-input-wrapper">
               <input
