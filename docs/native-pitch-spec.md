@@ -282,8 +282,18 @@ Stage a (shared refactor) is implemented per §2.1, with these judgment calls:
   wrongOctave-amber, mic hint raise/clear, practice cursor walk over three
   identical targets with re-strikes, bar regeneration, practice prompt — and
   the identical harness passes 12/12 against the pre-refactor commit, pinning
-  behavioral parity. The harness is not committed; §8.5 of the parent spec
-  plus the notes above are enough to rebuild it.
+  behavioral parity.
+- **The harness is committed** as `packages/web/scripts/pitchHarness.mjs`,
+  run via `npm run verify:pitch -w @musicalflashcards/web`. It is
+  self-contained: no npm dependencies (raw CDP over Node's built-in
+  `WebSocket`/`fetch`), builds the web package, serves `dist/` on a free port
+  via vite preview, launches headless Chrome with an ephemeral profile, runs
+  the 12 checks, and cleans up after itself. Env knobs: `CHROME_PATH`
+  overrides the Chrome binary (default is the standard macOS install path);
+  `APP_URL` skips build+serve and tests an already-running server. It is
+  deliberately **not** wired into `npm test`: it takes ~40 s wall-clock and
+  synchronizes to real 60 BPM beats, so it's an on-demand verification tool
+  (re-run it whenever the shared hooks or web UI change), not a CI suite.
 - The native app was confirmed to still bundle (`expo export`). Its
   `tsc --noEmit` has a pre-existing TS5097 noise floor (shared's
   explicit-extension imports vs. native's tsconfig, which lacks

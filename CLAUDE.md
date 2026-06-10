@@ -15,11 +15,13 @@ npm install                                      # install all workspaces
 npm run dev -w @musicalflashcards/web            # web dev server (Vite)
 npm run build -w @musicalflashcards/web          # type-check (tsc) + production build
 npm run lint -w @musicalflashcards/web           # ESLint, --max-warnings 0
+npm test -w @musicalflashcards/shared            # vitest (pitch trackers/judges, SVG-shim styling)
+npm run verify:pitch -w @musicalflashcards/web   # on-demand headless-Chrome pitch-judging check (~40s; needs Chrome, not part of npm test)
 npm run start -w @musicalflashcards/native       # Expo dev server
 npm run ios -w @musicalflashcards/native         # Expo, iOS simulator
 ```
 
-There are no tests. Netlify deploys the web package (`netlify.toml`).
+Netlify deploys the web package (`netlify.toml`).
 
 ## Architecture
 
