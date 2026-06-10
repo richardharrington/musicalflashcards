@@ -4,8 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
   "peerDependencies": {
     "react": ">=18",
     "vexflow": "~4.2.3"
+  },
+  "dependencies": {
+    "pitchy": "^4.1.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.8"
   }
 }

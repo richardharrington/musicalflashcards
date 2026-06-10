@@ -260,3 +260,84 @@ which `svgShim.ts` already serializes).
   and the sharps-only readout spelling are the three places that will change.
   Keep the judges comparing MIDI numbers (not note names) so correctness
   logic survives that extension unchanged.
+
+## 6. Phase 1 implementation addendum (2026-06-10)
+
+Phase 1 is implemented as specified, with the following judgment calls and
+findings that the spec did not anticipate. Later phases should treat these as
+settled unless they cause real problems.
+
+### 6.1 Plausible-frequency band (new constants)
+
+The white-noise acceptance test exposed a real McLeod Pitch Method artifact:
+pitchy reports **perfect clarity (1.0)** on white noise at very low
+frequencies (~26 Hz, i.e. midi 18). At lags near the frame size, the
+normalized square difference is computed over too few samples, so the clarity
+gate alone cannot reject it. Fix: `pitchTracker` also rejects detections
+outside a plausible band —
+
+```ts
+export const MIN_FREQ_HZ = 70;   // app's lowest note is G3 ≈ 196 Hz
+export const MAX_FREQ_HZ = 2500; // app's highest is B6 ≈ 1976 Hz
+```
+
+The band is deliberately generous so future range expansion doesn't hit it.
+The artifact lives at `sampleRate / frameSize` ≈ 23–50 Hz, comfortably below
+`MIN_FREQ_HZ`. If `FRAME_SIZE` or the supported note range ever changes,
+revisit both constants together.
+
+### 6.2 The articulation envelope only sees *pitched* frames
+
+`noteEventTracker.processFrame(reading: PitchReading | null, atMs)` takes the
+tracker's reading, not raw RMS; a `null` reading counts as RMS 0 for the
+hysteresis envelope. This is what makes "white noise → no events" actually
+hold — otherwise a loud unpitched burst (noise, talking, a percussive attack
+transient) would cross `RMS_HIGH` and emit an articulation.
+
+Consequence to be aware of: a strike's unpitched attack transient does not
+itself articulate; the pitched ring immediately after it does. In practice the
+articulation lands one frame (~50 ms) after the physical attack. Since attack
+*timing* is not graded (§1), this is harmless, but if onset-timing grading is
+ever added, articulation detection must move to a raw-RMS or spectral-flux
+basis at that point.
+
+### 6.3 `getCurrentRun()` accessor
+
+§3.1 says the practice judge "advances when the stable episode for the target
+reaches `HOLD_MS`", which requires reading continued stability, not just the
+one-shot `stableNote` event. The event tracker therefore exposes
+`getCurrentRun(): { midi, startedAtMs } | null` — the active same-midi run,
+surviving single-frame null gaps under the same rule as `stableNote`. Phase 2's
+`practiceJudge` should consume this rather than inventing its own hold timer.
+
+### 6.4 Stability timing is frame-granular
+
+A stable run's duration is only confirmable when a reading arrives. With a
+~50 ms cadence and a tolerated one-frame null gap, a `stableNote`'s `atMs` can
+land later than `runStart + STABLE_MS` (e.g. at 150 ms for a run that began at
+0 with a gap at 100). Judges must treat `atMs` as "when stability was
+confirmed", not an exact 100 ms mark — window bucketing in `tempoJudge` should
+already be tolerant of this.
+
+### 6.5 `midiToNote` range rule
+
+Besides returning `null` for accidentals, `midiToNote` returns `null` for
+octaves outside 3–6, because the shared `Note` tuple type cannot represent
+them (`Octave = 3 | 4 | 5 | 6`). Judges are unaffected (they compare MIDI
+numbers), and `midiToDisplayName` still names out-of-range pitches truthfully
+(e.g. `C2`) for the readout.
+
+### 6.6 Loose ends for Phase 2/3
+
+- `computeRms(frame)` is exported separately from the tracker. The tempo
+  judge's mic-check hint needs mean RMS "below `RMS_FLOOR`" even on frames
+  where the reading is `null` — the web pipeline should compute/forward raw
+  RMS for that purpose rather than inferring it from readings.
+- Versions installed: `pitchy@4.1.0` (dependency), `vitest@4.1.8`
+  (devDependency, first test infra in the repo). `npm test -w
+  @musicalflashcards/shared` runs the suite.
+- Tests live in `packages/shared/src/pitch/__tests__/`, with synthesis helpers
+  in `signals.ts`: phase-continuous sine generation (frames sliced from one
+  long buffer, like a real stream) and LCG-seeded deterministic white noise so
+  the clarity-gate tests cannot flake. Reuse these helpers when testing the
+  judges.
