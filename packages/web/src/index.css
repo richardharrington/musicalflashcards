@@ -189,10 +189,14 @@ input {
 }
 
 .live-readout-muted {
-  font-size: 1rem;
-  color: #9ca3af;
-  min-height: 1.5rem;
+  font-size: 1.8rem;
+  min-height: 2.5rem;
   margin-bottom: 10px;
+}
+
+/* the list used to inherit 1.2rem from its (invalidly nested) parent <p> */
+.coming-soon-list {
+  font-size: 1.2rem;
 }
 
 .practice-prompt {

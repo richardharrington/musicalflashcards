@@ -226,9 +226,9 @@ function App({
           <p>
             {renderRestInputs()}
           </p>
-          <p>
+          <div>
             {renderNoteBoundaryInputs()}
-          </p>
+          </div>
           <p>
             <input
               type="checkbox"
@@ -240,18 +240,18 @@ function App({
           </p>
           <p>
             Coming soon:
-            <ul>
-              <li>
-                Option to have metronomic audio cues for the notes.
-              </li>
-              <li>
-                Option to annotate each note with its letter
-              </li>
-              <li>
-                Option to annotate each note with its finger number
-              </li>
-            </ul>
           </p>
+          <ul className="coming-soon-list">
+            <li>
+              Option to have metronomic audio cues for the notes.
+            </li>
+            <li>
+              Option to annotate each note with its letter
+            </li>
+            <li>
+              Option to annotate each note with its finger number
+            </li>
+          </ul>
         </div>
       </div>
     </>

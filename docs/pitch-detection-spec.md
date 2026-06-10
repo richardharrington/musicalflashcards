@@ -422,3 +422,27 @@ real-instrument acceptance pass in §4 is still pending.
   warnings (`<p>` inside `<p>`, `<ul>` inside `<p>` in `App.tsx`) and a
   favicon 404. Also pre-existing: the repo's `npm run lint` has no ESLint
   config file anywhere, so it errors before linting.
+
+### 7.5 Real-instrument smoke-test fixes (2026-06-10)
+
+The §4 real-instrument pass surfaced one real bug and two readout changes:
+
+- **Articulation thresholds retuned** (`RMS_LOW` 0.02 → 0.005, `RMS_HIGH`
+  0.06 → `RMS_FLOOR`). Real mics deliver raw RMS far below the synthetic
+  levels Phase 1 tested with: pitch readings flowed (the readout tracked
+  every note) but RMS never crossed 0.06, so no articulation ever fired and
+  the practice judge never judged anything — noteheads stayed black at any
+  playing volume. With `RMS_HIGH = RMS_FLOOR`, any frame loud enough to
+  register a pitch articulates after quiet; the envelope's noise immunity now
+  rests entirely on the clarity gate (null readings count as RMS 0, §6.2).
+  Phase 3's "ambient noise must not fail a rest" criterion leans on that same
+  rule and should be re-verified with a real mic.
+- **Readout shows only the note name** (`G♯4`, no cents). Overrides §3.2's
+  "note name + signed cents"; cents are still computed and retained per §1.
+- **Readout de-muted in tempo mode**: larger (1.8rem) and no longer grey.
+  Practice mode's 2.5rem bold variant is unchanged; "visually subordinate"
+  (§1) now means size/weight only, not color.
+
+The DOM-nesting warnings noted in §7.4 as pre-existing were also fixed
+(`App.tsx`: the note-boundary radio group is a `<div>`, the coming-soon list
+sits beside its `<p>` rather than inside it).

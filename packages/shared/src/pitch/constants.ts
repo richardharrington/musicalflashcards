@@ -3,8 +3,15 @@ export const CLARITY_THRESHOLD = 0.9;   // pitchy clarity gate
 export const STABLE_MS = 100;           // stable-pitch requirement
 export const HOLD_MS = 250;             // practice-mode hold-to-advance
 export const RMS_FLOOR = 0.01;          // below this: silence
-export const RMS_LOW = 0.02;            // articulation hysteresis: quiet below
-export const RMS_HIGH = 0.06;           // articulation hysteresis: strike above
+// Articulation hysteresis. Retuned after the first real-instrument smoke test
+// (2026-06-10): raw mic RMS for normal playing can sit entirely below the
+// original 0.02/0.06 band, so articulation never fired — readings flowed to
+// the readout but the practice judge stayed unarmed forever. RMS_HIGH equal
+// to RMS_FLOOR means any frame loud enough to register a pitch also
+// articulates after quiet; quiet requires dropping below RMS_LOW or going
+// unpitched (null readings count as RMS 0 for the envelope).
+export const RMS_LOW = 0.005;           // articulation hysteresis: quiet below
+export const RMS_HIGH = RMS_FLOOR;      // articulation hysteresis: strike above
 export const FRAME_SIZE = 2048;         // analysis window (≈43ms @48kHz)
 export const MIC_HINT_BARS = 2;
 

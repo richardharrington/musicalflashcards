@@ -7,16 +7,8 @@ type Props = {
   prominent: boolean; // primary UI in practice mode, muted in tempo mode
 };
 
-const formatCents = (cents: number): string => {
-  const rounded = Math.round(cents);
-  return `${rounded < 0 ? '−' : '+'}${Math.abs(rounded)}¢`;
-};
-
 function LiveReadout({ reading, prominent }: Props) {
-  const text =
-    reading === null
-      ? '—'
-      : `${midiToDisplayName(reading.midi)} ${formatCents(reading.cents)}`;
+  const text = reading === null ? '—' : midiToDisplayName(reading.midi);
   return (
     <div
       className={cx('live-readout', {
