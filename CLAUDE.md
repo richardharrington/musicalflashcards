@@ -1,0 +1,42 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+A sight-reading practice app: it renders a random measure of music notation (VexFlow) on a treble-clef staff, advances a visual metronome at a chosen BPM, and generates new notes each time the bar loops. There are two front-ends — web (React + Vite) and native (Expo / React Native) — sharing all state and rendering logic through a common package.
+
+## Commands
+
+Run from the repo root (npm workspaces; Node version pinned in `.node-version`):
+
+```sh
+npm install                                      # install all workspaces
+npm run dev -w @musicalflashcards/web            # web dev server (Vite)
+npm run build -w @musicalflashcards/web          # type-check (tsc) + production build
+npm run lint -w @musicalflashcards/web           # ESLint, --max-warnings 0
+npm run start -w @musicalflashcards/native       # Expo dev server
+npm run ios -w @musicalflashcards/native         # Expo, iOS simulator
+```
+
+There are no tests. Netlify deploys the web package (`netlify.toml`).
+
+## Architecture
+
+Three workspaces under `packages/`:
+
+- **`shared`** (`@musicalflashcards/shared`) — published as raw TypeScript source (`main` points at `src/index.ts`; consumers compile it themselves). Everything platform-independent lives here:
+  - `utils/noteUtils.tsx` — the `Note` type (`[octave, pitchClass]` tuple), `PITCH_CLASS` constants, note-range/random-note generation.
+  - `hooks/useAppState.ts` — the single state hook both apps use: BPM input, rest count, note-boundary selection, current beat, and note regeneration (new notes when the beat wraps to 1 or settings change). `useBeatInterval` drives the beat via chained `setTimeout`s.
+  - `rendering/buildMeasure.ts` / `drawMeasure.ts` — convert `Note`s into VexFlow `StaveNote`s (rests first, then quarter notes) and format/draw a voice onto a stave.
+  - `rendering/svgShim.ts` — see below.
+
+- **`web`** — React 18 + Vite + Tailwind. `main.tsx` defines app constants (`NOTE_BOUNDARY_PAIRS`, beats per bar, initial BPM/rests) and renders `App`. Its `Bar` component gives VexFlow's SVG renderer a real DOM element.
+
+- **`native`** — Expo / React Native 0.81 with React 19. `App.tsx` duplicates the same app constants as web's `main.tsx` (keep them in sync if you change one). Its `Bar` renders VexFlow with no DOM: `svgShim.ts` installs a fake `globalThis.document` whose `createElementNS` returns `FakeSVGElement`s, VexFlow draws into that tree, `toSVGString` serializes it, and `react-native-svg`'s `SvgXml` displays it. The shim setup/teardown is depth-counted and restores any pre-existing `document`; always pair `setupFakeDocument()` with `teardownFakeDocument()` in a `finally`.
+
+### Cross-cutting constraints
+
+- VexFlow is pinned to `~4.2.3` in all three packages and listed as a peer dependency of `shared` — keep versions aligned; the native SVG shim only implements the subset of the DOM that VexFlow 4.2 actually calls.
+- `native/metro.config.js` forces `react` and `react-native` to resolve from the native package's own `node_modules`, because native uses React 19 while web uses React 18. Shared code must work with both.
+- The web/shared tsconfigs use `allowImportingTsExtensions`; imports within `shared` and its public exports use explicit `.ts`/`.tsx` extensions.
