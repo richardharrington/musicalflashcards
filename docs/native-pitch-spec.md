@@ -445,3 +445,79 @@ With both platform passes green, **stage b's agent-level acceptance (§4) is
 met**: working dev builds on both platforms; permission grant/deny flows
 produce the right toggle states; the readout tracks host-mic sound including
 accidentals; toggling off releases the mic.
+
+## 9. Stage c implementation addendum (2026-06-10)
+
+Stage c (modes, judging, native UI) is implemented per §2.4. The code change
+is small because stage a put everything in shared: native `App.tsx` swaps
+`useAppState` + `usePitchPipeline` for `useJudgedAppState` and adds the mode
+selector (styled like the rest-count radio row, per §2.4), mic hint
+(`#d97706`), practice prompt (`#6b7280`), conditional metronome
+(tempo only), and mode-dependent readout prominence; native `Bar` passes
+`noteVerdicts` / `restWindowVerdicts` / `cursorIndex` through to
+`buildFullMeasure` (and adds them to its `useMemo` deps). No shim or
+pipeline changes were needed — `setStyle` colors serialize exactly as the
+stage a regression test promised.
+
+**Verification — static**: 56/56 vitest, native `tsc --noEmit` clean above
+the pre-existing TS5097 floor, `expo export` bundles both platforms.
+
+**Verification — §3.2 agent checks**: all pass on the iOS simulator
+(iPhone 17 Pro, iOS 26.3) and the Android emulator (Pixel_10, emulator
+36.6.11). Both modes were exercised end-to-end with deterministic targets
+(`Math.random = () => 0` pinned temporarily in `native/index.ts` — the web
+harness technique; every target is G3/196 Hz; removed after the runs) and
+sine WAVs played through the Mac speakers. Verified on both platforms:
+practice cursor walk over identical targets with re-strikes, wrong-note red
+and wrong-octave amber (transient, no advance), bar completion all-green and
+regeneration with cursor reset, prominent/muted readout, practice prompt,
+metronome hidden in practice; tempo correct-green during the note's own
+beat, restViolated red on both rest glyph shapes, missed gray persisting
+through the wrap holdover, judging spanning regenerated bars, mic hint
+raised after two silent bars and cleared by the next qualifying strike.
+
+Verification mechanics, for future agent runs:
+
+- **iOS**: no `cliclick`/`idb` needed — clicks are posted with a small
+  CGEvent Swift helper at global coordinates computed from the window frame
+  (`CGWindowListCopyWindowInfo`, window captured shadow-free with
+  `screencapture -o -l<id>`) plus the device-screen rect found by scanning
+  the capture for the bezel edges (corner arcs are symmetric, so the
+  vertical center comes from a near-edge column's bright run and the height
+  from the device aspect ratio). Beat phase was read by pixel-probing the
+  metronome circles in `simctl` screenshots.
+- **Wrong/wrongOctave are transient verdicts** (cleared on silence), and the
+  practice completion→regeneration cycle is only `BAR_COMPLETE_DELAY_MS`
+  (600 ms) wide — and with pinned targets the regenerated bar is visually
+  identical. Screenshots must land mid-tone (and `simctl io screenshot`
+  latency is ~0.5–1.5 s, so use long tones); on Android the catch loops
+  pixel-probe the notehead region and retry.
+- **Tempo judging needs one fresh strike per window** (a sustained tone
+  qualifies once, at its articulation) — verify with ~1 s-cadence strike
+  trains, not held tones. With 1 rest, the only rest window overlaps the
+  wrap holdover + `setTargets` reset, so restViolated is only briefly
+  visible; use 3 rests to see red rests clearly.
+- **Android emulator host-mic flakiness** (the dominant time sink): on
+  emulator 36.6.11, qemu's CoreAudio input stream frequently starves the
+  virtual audio HAL — logcat fills with `TinyalsaSource::read ...
+  producerThread was late delivering frames, inserting 16000 us of silence`
+  and the guest reads pure zeros (frames flow, RMS 0, em-dash readout).
+  This happens on some boots from the start and otherwise within
+  ~15–60 s of capture. The host side was verified healthy (AVAudioEngine
+  tap from the same shell shows live RMS), and macOS TCC + 44.1 kHz input
+  rate were confirmed; the failure is inside qemu. **Recovery recipe**
+  (reliable, needed repeatedly): `adb emu avd hostmicoff` then `hostmicon`
+  **while the app's recorder is running**, then toggle Listen off/on so the
+  recorder reopens its stream. Verification scripts should loop
+  recovery+probe (check the readout region's pixels) rather than assume one
+  recovery sticks. This is an emulator-environment defect, not app code —
+  the same micSource judged correctly whenever frames actually arrived, and
+  it does not occur on the iOS simulator.
+- The Listen button is centered only while the mic hint is hidden; when
+  "Check your microphone?" is visible the button shifts left (~x 299 instead
+  of 539 on a 1080-wide Pixel) — account for it when scripting taps.
+
+**Status**: §4 stage c agent-level acceptance is met. Phase 4 completion
+still requires the §3.3 human acceptance passes — full real-instrument
+criteria on the physical Android phone and the borrowed-iPhone smoke pass —
+which only the developer can run.

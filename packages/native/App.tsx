@@ -2,11 +2,10 @@ import { StatusBar } from 'expo-status-bar';
 import { ScrollView, StyleSheet, Switch, Text, TextInput, Pressable, View } from 'react-native';
 import {
   PITCH_CLASS,
-  useAppState,
-  usePitchPipeline,
+  useJudgedAppState,
   getNoteBoundaryDisplayString,
 } from '@musicalflashcards/shared';
-import type { NoteBoundaryPair } from '@musicalflashcards/shared';
+import type { Mode, NoteBoundaryPair } from '@musicalflashcards/shared';
 import { createMicSource, micErrorToMessage } from './audio/micSource';
 import Bar from './components/Bar';
 import LiveReadout from './components/LiveReadout';
@@ -39,8 +38,20 @@ const BEATS_PER_BAR = 4;
 const INITIAL_BPM = 60;
 const INITIAL_RESTS = 3;
 
+const MODES: Array<[Mode, string]> = [['practice', 'Practice'], ['tempo', 'Tempo']];
+
 export default function App() {
   const {
+    mode,
+    setMode,
+    listening,
+    micError,
+    toggleListen,
+    currentReading,
+    micHintVisible,
+    noteVerdicts,
+    restWindowVerdicts,
+    cursorIndex,
     notes,
     currentBeat,
     beatsPerBar,
@@ -53,25 +64,26 @@ export default function App() {
     noteBoundaryPairName,
     setNoteBoundaryPairName,
     noteBoundaryPairs,
-  } = useAppState({
+  } = useJudgedAppState({
     beatsPerBar: BEATS_PER_BAR,
     initialBpm: INITIAL_BPM,
     initialRests: INITIAL_RESTS,
     noteBoundaryPairs: NOTE_BOUNDARY_PAIRS,
+    createMicSource,
+    micErrorToMessage,
   });
-
-  const {
-    listening,
-    error: micError,
-    toggle: toggleListen,
-    currentReading,
-  } = usePitchPipeline({ createMicSource, micErrorToMessage });
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Musical Flashcards</Text>
 
-      <Bar notes={notes} beatsPerBar={beatsPerBar} />
+      <Bar
+        notes={notes}
+        beatsPerBar={beatsPerBar}
+        noteVerdicts={noteVerdicts}
+        restWindowVerdicts={restWindowVerdicts}
+        cursorIndex={cursorIndex}
+      />
 
       <View style={styles.pitchControls}>
         <Pressable
@@ -87,13 +99,40 @@ export default function App() {
           </Text>
         </Pressable>
         {micError !== null && <Text style={styles.listenError}>{micError}</Text>}
+        {micHintVisible && (
+          <Text style={styles.micHint}>Check your microphone?</Text>
+        )}
       </View>
 
-      {listening && <LiveReadout reading={currentReading} prominent={false} />}
+      {listening && (
+        <LiveReadout reading={currentReading} prominent={mode === 'practice'} />
+      )}
 
-      <VisualMetronome beatsPerBar={beatsPerBar} currentBeat={currentBeat} />
+      {mode === 'practice' && !listening && (
+        <Text style={styles.practicePrompt}>
+          Turn on Listen, then play each highlighted note to advance.
+        </Text>
+      )}
+
+      {mode === 'tempo' && (
+        <VisualMetronome beatsPerBar={beatsPerBar} currentBeat={currentBeat} />
+      )}
 
       <View style={styles.settings}>
+        <View style={styles.radioRow}>
+          {MODES.map(([value, label]) => (
+            <Pressable
+              key={value}
+              style={[styles.radioButton, mode === value && styles.radioButtonActive]}
+              onPress={() => setMode(value)}
+            >
+              <Text style={[styles.radioText, mode === value && styles.radioTextActive]}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <View style={styles.row}>
           <TextInput
             style={styles.bpmInput}
@@ -198,6 +237,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#dc2626',
     flexShrink: 1,
+  },
+  micHint: {
+    fontSize: 16,
+    color: '#d97706',
+    flexShrink: 1,
+  },
+  practicePrompt: {
+    fontSize: 15,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 12,
   },
   settings: {
     width: '100%',

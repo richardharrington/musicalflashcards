@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { Vex } from 'vexflow';
-import type { Note } from '@musicalflashcards/shared';
+import type { Note, VerdictState } from '@musicalflashcards/shared';
 import {
   buildFullMeasure,
   drawMeasure,
@@ -20,9 +20,18 @@ const STAVE_X = 45;
 type Props = {
   notes: Array<Note>;
   beatsPerBar: number;
+  noteVerdicts?: Array<VerdictState>;
+  restWindowVerdicts?: Array<VerdictState>;
+  cursorIndex?: number | null;
 };
 
-export default function Bar({ notes, beatsPerBar }: Props) {
+export default function Bar({
+  notes,
+  beatsPerBar,
+  noteVerdicts,
+  restWindowVerdicts,
+  cursorIndex,
+}: Props) {
   const { width: screenWidth } = useWindowDimensions();
   const displayWidth = screenWidth - 40;
 
@@ -44,14 +53,18 @@ export default function Bar({ notes, beatsPerBar }: Props) {
       stave.addClef('treble').addTimeSignature('4/4');
       stave.setContext(context).draw();
 
-      const tickables = buildFullMeasure(notes, beatsPerBar);
+      const tickables = buildFullMeasure(notes, beatsPerBar, {
+        noteVerdicts,
+        restWindowVerdicts,
+        cursorIndex,
+      });
       drawMeasure({ context, stave, tickables, beatsPerBar });
 
       return toSVGString(container);
     } finally {
       teardownFakeDocument();
     }
-  }, [notes, beatsPerBar]);
+  }, [notes, beatsPerBar, noteVerdicts, restWindowVerdicts, cursorIndex]);
 
   if (!svgString) return null;
   const cleanedSvg = svgString.replace(/ pointer-events="[^"]*"/g, '');
