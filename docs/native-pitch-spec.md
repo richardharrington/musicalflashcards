@@ -521,3 +521,57 @@ Verification mechanics, for future agent runs:
 still requires the §3.3 human acceptance passes — full real-instrument
 criteria on the physical Android phone and the borrowed-iPhone smoke pass —
 which only the developer can run.
+
+## 10. Physical-device findings (2026-06-11)
+
+First §3.3 session on the Android phone (Moto G Play 2023, dev build,
+ukulele) found two real defects the emulator could not surface. Both fixes
+live in `packages/native/audio/micSource.ts`; shared code is untouched.
+
+**Defect 1 — JS-thread saturation froze the UI.** At the original cadence
+(detection every 2 × 512-sample buffers, 2048-sample MPM window) the O(n²)
+detector saturated the phone's JS thread: audio events starved React's
+commits and touch handling, so the readout/staff never updated — the app
+looked deaf while the pipeline processed correctly underneath (logcat showed
+clean readings; native scrolling still worked, taps and renders did not).
+On the emulator the host Mac's CPU absorbed this. Two-step fix:
+`EMIT_EVERY_N_BUFFERS` 2 → 8 (~12 detections/s) and a native-only
+`WINDOW_SIZE` of 1024 samples instead of shared `FRAME_SIZE` 2048 (MPM cost
+÷4; 1024 samples still holds 4+ periods of G3). A halfway fix (cadence only)
+unfroze input but left renders lagging seconds behind — both steps are
+needed on this class of device. Release builds have more headroom but the
+dev build must stay usable for §3.2-style verification.
+
+**Defect 2 — device mic levels ~10× below the shared RMS thresholds.**
+The shared constants were tuned on desktop mics. On the phone, a ukulele's
+ringing sustain plateaued at ~0.0006–0.0012 raw RMS (noise floor ~0.0005),
+so nothing crossed `RMS_FLOOR` and only the unpitched attack transient ever
+reached the detector (which then rejected it on clarity — the symptom was
+silence plus garbage-frequency rejects, not low-clarity notes). Fix:
+`INPUT_GAIN = 16` applied in the ring-buffer copy. Unpitched frames read as
+RMS 0 to the articulation envelope, so amplified noise does not
+false-articulate; gained noise (~0.008) stays under `RMS_FLOOR`, keeping the
+tempo judge's mic-hint silence test meaningful.
+
+Diagnosis notes for next time:
+- Throttled RMS/clarity logging at three probe points (mic source, pipeline,
+  tracker rejects) split the problem cleanly: signal present? → readings
+  produced? → which gate rejects? Remove the per-reject log quickly — at
+  30–50 lines/s the dev-mode console bridge itself degrades the JS thread.
+- `adb exec-out screencap` plus an injected tap/swipe distinguishes "deaf
+  mic" from "frozen UI" in seconds: if a native scroll moves but a React
+  state change (mode tab) doesn't, it's commit starvation, not audio.
+- Watch the diag cadence: sample-clock seconds arriving faster than wall
+  clock means the JS thread is behind the recorder, not that the recorder
+  is fast.
+- Physical setup matters at these signal levels: the phone propped against
+  a metal music stand lost ~30× signal versus the same distance on a soft
+  surface (bottom-edge mic port blocked/damped). Very hard plucks close to
+  the mic distort and read an octave low; normal volume is the reliable
+  regime. (The octave flips disappeared with the 1024 window.)
+
+**Status**: practice mode passes on the Android device (cursor walks,
+verdicts color, A4 reads correctly). Remaining for §3.3: the tempo-mode
+criteria on the Android device, the permission-denial check, and the
+borrowed-iPhone smoke pass. The user flagged the transient red/amber
+verdict flicker as a future polish topic (per-spec behavior, not a defect).

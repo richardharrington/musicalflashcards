@@ -4,15 +4,39 @@ import {
   setAudioModeAsync,
   setIsAudioActiveAsync,
 } from 'expo-audio';
-import { FRAME_SIZE } from '@musicalflashcards/shared';
 import type { MicFrameCallback } from '@musicalflashcards/shared';
 
-// Recorder buffers are much smaller than FRAME_SIZE; a ring buffer accumulates
-// them and emits a full overlapping window every EMIT_EVERY_N_BUFFERS
-// callbacks (2 × 512 samples ≈ 21 ms at 48 kHz, comparable to web's 60 Hz
-// polling). Raise it if pitch detection's CPU cost on the JS thread shows.
+// Recorder buffers are much smaller than the analysis window; a ring buffer
+// accumulates them and emits a window every EMIT_EVERY_N_BUFFERS callbacks
+// (the most recent WINDOW_SIZE samples of each span — windows are sparse,
+// not overlapping). 8 × 512 samples ≈ 85 ms at 48 kHz (~12 detections/s): on a
+// physical budget phone (Moto G Play 2023), emitting every 2 buffers ran the
+// O(n²) MPM detector often enough to saturate the JS thread — audio events
+// starved React's commits and touch handling, freezing the UI while the
+// pipeline kept processing. ~85 ms still gives the judges several frames
+// inside their STABLE_MS/HOLD_MS windows.
 const BUFFER_LENGTH = 512;
-const EMIT_EVERY_N_BUFFERS = 2;
+const EMIT_EVERY_N_BUFFERS = 8;
+
+// Analysis window for native, deliberately smaller than shared FRAME_SIZE
+// (2048): MPM is O(n²) per window, and on a budget phone CPU running the
+// dev-mode bundle, 2048-sample windows kept the JS thread busy enough that
+// React commits lagged seconds behind the audio. 1024 samples ≈ 21 ms still
+// holds 4+ periods of the app's lowest displayed note (G3, 196 Hz); the
+// pitch detector sizes itself from the emitted window, so shared code needs
+// no change.
+const WINDOW_SIZE = 1024;
+
+// Android device recorders deliver far lower amplitudes than the desktop mics
+// the shared RMS thresholds were tuned on (measured on a Moto G Play 2023:
+// at 8x gain a ukulele's ringing sustain plateaued at 0.006–0.0096 RMS —
+// just under the 0.01 silence floor, so only the unpitched attack transient
+// ever reached the pitch detector; room noise floor was ~0.004). 16x puts
+// the sustain at ~0.012–0.019 (above RMS_FLOOR, where measured clarity runs
+// 0.92–0.98) while noise stays under the floor. Unpitched frames read as
+// silence to the articulation envelope, so amplified noise doesn't
+// false-articulate.
+const INPUT_GAIN = 16;
 
 // iOS audio-session handling lives with expo-audio, not the library. The
 // library's own session manager defaults to a playback-only category (the
@@ -38,7 +62,7 @@ export const micErrorToMessage = (err: unknown): string => {
 };
 
 // The only platform-specific audio code: AudioRecorder's data callback feeds a
-// ring buffer that emits overlapping FRAME_SIZE windows. The same Float32Array
+// ring buffer that emits WINDOW_SIZE analysis windows. The same Float32Array
 // is reused for every emitted window; consumers must process it synchronously,
 // not retain it.
 export const createMicSource = (onFrame: MicFrameCallback) => {
@@ -72,11 +96,11 @@ export const createMicSource = (onFrame: MicFrameCallback) => {
     await setIsAudioActiveAsync(true);
     if (session !== mySession) return; // stop() called while awaiting
 
-    const ring = new Float32Array(FRAME_SIZE);
+    const ring = new Float32Array(WINDOW_SIZE);
     let writeIndex = 0;
     let samplesWritten = 0;
     let buffersSinceEmit = 0;
-    const frame = new Float32Array(FRAME_SIZE);
+    const frame = new Float32Array(WINDOW_SIZE);
 
     // atMs comes from a sample counter, not the event: the 0.12.2 typings
     // declare a `when` timestamp on audioReady events but the native payload
@@ -92,19 +116,19 @@ export const createMicSource = (onFrame: MicFrameCallback) => {
         const data = event.buffer.getChannelData(0);
         const numFrames = Math.min(event.numFrames, data.length);
         for (let i = 0; i < numFrames; i++) {
-          ring[writeIndex] = data[i];
-          writeIndex = (writeIndex + 1) % FRAME_SIZE;
+          ring[writeIndex] = data[i] * INPUT_GAIN;
+          writeIndex = (writeIndex + 1) % WINDOW_SIZE;
         }
         samplesWritten += numFrames;
         buffersSinceEmit += 1;
-        if (samplesWritten < FRAME_SIZE || buffersSinceEmit < EMIT_EVERY_N_BUFFERS) {
+        if (samplesWritten < WINDOW_SIZE || buffersSinceEmit < EMIT_EVERY_N_BUFFERS) {
           return;
         }
         buffersSinceEmit = 0;
 
         // unroll the ring so the emitted window is in chronological order
         frame.set(ring.subarray(writeIndex), 0);
-        frame.set(ring.subarray(0, writeIndex), FRAME_SIZE - writeIndex);
+        frame.set(ring.subarray(0, writeIndex), WINDOW_SIZE - writeIndex);
 
         // the window ends at the most recently captured sample
         const sampleRate = event.buffer.sampleRate;
